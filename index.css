@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.print-hide {
+    display: block;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .print-hide {
+        display: none;
+    }
+    #printable-area, #printable-area * {
+        visibility: visible;
+    }
+    #printable-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .bg-yellow-200 { background-color: #FEF08A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .text-yellow-800 { color: #854D0E !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bg-purple-200 { background-color: #E9D5FF !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .text-purple-800 { color: #6B21A8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bg-green-200 { background-color: #BBF7D0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .text-green-800 { color: #166534 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bg-gray-200 { background-color: #E5E7EB !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .text-gray-700 { color: #374151 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bg-red-100 { background-color: #FEE2E2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .text-red-700 { color: #B91C1C !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
