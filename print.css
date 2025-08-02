@@ -1,0 +1,112 @@
+/* src/print.css */
+@media print {
+  /* --- Page Setup --- */
+  @page {
+    size: A4 landscape; /* กำหนดขนาดกระดาษเป็น A4 แนวนอน */
+    margin: 10mm; /* กำหนดระยะขอบกระดาษ */
+  }
+
+  /* --- Body and Root Element --- */
+  body, html, #root {
+    width: 100%;
+    height: 100%;
+    background: white !important; /* พื้นหลังสีขาวเสมอ */
+    -webkit-print-color-adjust: exact; /* ทำให้สีพื้นหลังของกะแสดงผลตอนปริ้น */
+    print-color-adjust: exact;
+  }
+
+  /* --- Main Container --- */
+  .min-h-screen {
+    min-height: 0 !important;
+    height: 100%;
+    padding: 0 !important;
+  }
+
+  /* --- Calendar Area --- */
+  #printable-area {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+    padding: 0 !important;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* --- Calendar Header --- */
+  .calendar-header-print {
+     padding: 4px;
+     text-align: center;
+     border-bottom: 1px solid #ccc;
+  }
+  .calendar-header-print h2 {
+    font-size: 14pt !important;
+    margin: 0;
+  }
+
+  /* --- Day Headers (อา, จ, อ...) --- */
+  .day-header-grid {
+    font-size: 8pt !important;
+    border-bottom: 1px solid #ccc;
+  }
+  .day-header-grid > div {
+    padding: 2px 0 !important;
+  }
+
+  /* --- Main Calendar Grid --- */
+  .calendar-grid {
+    flex-grow: 1; /* ทำให้ตารางขยายเต็มพื้นที่ที่เหลือ */
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: 1fr; /* ทำให้ทุกแถวสูงเท่ากัน */
+    gap: 1px;
+    background-color: #ccc;
+  }
+  
+  /* --- Calendar Day Cell --- */
+  .day-cell-print {
+    background: white;
+    padding: 2px !important;
+    min-height: 0 !important; /* Override min-height */
+    font-size: 7pt !important;
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+  }
+  .day-cell-print .day-number {
+    font-weight: bold;
+    font-size: 8pt;
+    margin-bottom: 2px;
+  }
+  .day-cell-print .holiday-name {
+     font-size: 6pt !important;
+  }
+
+  /* --- Shift Info --- */
+  .shift-container-print {
+    margin-top: 2px;
+  }
+  .shift-info-print {
+    padding: 1px 2px !important;
+    font-size: 6pt !important;
+    border-radius: 2px;
+    margin-bottom: 1px;
+  }
+  .shift-info-print .shift-details {
+    display: flex;
+    align-items: center;
+  }
+  .shift-info-print .shift-time {
+    padding-left: 10px;
+    font-size: 5pt;
+  }
+  .shift-info-print svg {
+    width: 8px;
+    height: 8px;
+  }
+
+  /* --- Legend --- */
+  .legend-print {
+    display: none; /* ซ่อนคำอธิบายไปเลยเพื่อให้มีพื้นที่สำหรับปฏิทิน */
+  }
+}
