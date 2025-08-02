@@ -1,13 +1,56 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, UserPlus, LogIn, LogOut, Users, Trash2, Edit, Save, XCircle, Sun, Moon, UserCheck, Coffee, PartyPopper, Palette, Info, Printer } from 'lucide-react';
+import { ChevronLeft, ChevronRight, UserPlus, LogIn, LogOut, Users, Trash2, Edit, Save, XCircle, Sun, Moon, UserCheck, Coffee, PartyPopper, Palette, Info, Printer, ShieldAlert, Loader2 } from 'lucide-react';
 
-// Helper Functions
+// --- Firebase Imports ---
+import { initializeApp } from "firebase/app";
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    signInWithEmailAndPassword, 
+    signOut 
+} from "firebase/auth";
+import { 
+    getFirestore, 
+    collection, 
+    onSnapshot, 
+    addDoc, 
+    doc, 
+    updateDoc, 
+    deleteDoc, 
+    setDoc
+} from "firebase/firestore";
+
+
+// --- Firebase Configuration ---
+// This is the configuration you provided.
+const firebaseConfig = {
+    apiKey: "AIzaSyAoWXaO7uleDu-q0djEuGJUFr0FxGrLO38",
+    authDomain: "babo-schedule-app.firebaseapp.com",
+    projectId: "babo-schedule-app",
+    storageBucket: "babo-schedule-app.appspot.com",
+    messagingSenderId: "141102385999",
+    appId: "1:141102385999:web:3cf842db56b08e048f933a",
+    measurementId: "G-F1W30WDPGT"
+};
+
+
+// --- Initialize Firebase ---
+let app, auth, db;
+try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+} catch (error) {
+    console.error("Firebase initialization error:", error);
+}
+
+
+// --- Helper Functions & Constants ---
 const getThaiMonthName = (monthIndex) => {
     const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
     return months[monthIndex];
 };
 
-// วันหยุดนักขัตฤกษ์ (ข้อมูลคงที่)
 const publicHolidays = {
     '2025-01-01': 'วันขึ้นปีใหม่',
     '2025-02-12': 'วันมาฆบูชา',
@@ -41,30 +84,79 @@ const THEMES = {
     pastel: { bg: 'bg-slate-100', primary: 'bg-blue-400', secondary: 'bg-teal-300', text: 'text-gray-700', accent: 'bg-pink-400', font: 'font-sans' }
 };
 
-// Mock Data
-const initialEmployees = [ { id: 'emp1', name: 'PK' }, { id: 'emp2', name: 'OC' } ];
-const initialSchedules = {
-    '2025-08-04': { emp1: 'morning', emp2: 'late' },
-    '2025-08-05': { emp1: 'leave', emp2: 'late' },
-    '2025-08-06': { emp1: 'morning', emp2: 'leave' },
-    '2025-08-11': { emp1: 'morning', emp2: 'late' },
-    '2025-08-12': { emp1: 'solo' },
-    '2025-08-18': { emp1: 'late', emp2: 'morning' },
-};
-
-// Main App Component
+// --- Main App Component ---
 export default function App() {
-    const [view, setView] = useState('public');
-    const [currentDate, setCurrentDate] = useState(new Date(2025, 7, 1));
-    const [employees, setEmployees] = useState(initialEmployees);
-    const [schedules, setSchedules] = useState(initialSchedules);
+    const [user, setUser] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
+    const [showLogin, setShowLogin] = useState(false);
+    
+    const [currentDate, setCurrentDate] = useState(new Date()); // Start with the current date
+    const [employees, setEmployees] = useState([]);
+    const [schedules, setSchedules] = useState({});
     const [theme, setTheme] = useState('shinchan');
+    const [dataLoading, setDataLoading] = useState(true);
 
-    const handleLogin = (password) => {
-        if (password === 'admin1234') { setView('admin'); } 
-        else { alert('รหัสผ่านไม่ถูกต้อง!'); }
+    // Effect for handling authentication state
+    useEffect(() => {
+        if (!auth) {
+            setAuthLoading(false);
+            return;
+        }
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
+            setAuthLoading(false);
+            if (user) {
+                setShowLogin(false); // Close login modal if user signs in
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Effect for fetching data from Firestore
+    useEffect(() => {
+        if (!db) {
+            setDataLoading(false);
+            return;
+        }
+        setDataLoading(true);
+        // Fetch employees
+        const unsubEmployees = onSnapshot(collection(db, "employees"), (snapshot) => {
+            const emps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setEmployees(emps);
+        }, (error) => {
+            console.error("Error fetching employees:", error);
+        });
+
+        // Fetch schedules
+        const unsubSchedules = onSnapshot(collection(db, "schedules"), (snapshot) => {
+            const scheds = {};
+            snapshot.forEach(doc => {
+                scheds[doc.id] = doc.data();
+            });
+            setSchedules(scheds);
+            setDataLoading(false); // Set loading to false after schedules are loaded
+        }, (error) => {
+            console.error("Error fetching schedules:", error);
+            setDataLoading(false);
+        });
+
+        return () => {
+            unsubEmployees();
+            unsubSchedules();
+        };
+    }, []);
+
+    const handleLogout = async () => {
+        if (!auth) return;
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Error signing out:", error);
+            alert("เกิดข้อผิดพลาดในการออกจากระบบ");
+        }
     };
     
+    // This logic automatically adjusts shifts to 'solo' if only one person is working.
     const processedSchedules = useMemo(() => {
         const newSchedules = JSON.parse(JSON.stringify(schedules));
         Object.keys(newSchedules).forEach(dateStr => {
@@ -74,7 +166,7 @@ export default function App() {
             if (workingEmployees.length === 1) {
                 const soloWorkerId = workingEmployees[0];
                 if(daySchedule[soloWorkerId] === 'morning' || daySchedule[soloWorkerId] === 'late') {
-                   daySchedule[soloWorkerId] = 'solo';
+                    daySchedule[soloWorkerId] = 'solo';
                 }
             }
         });
@@ -83,38 +175,93 @@ export default function App() {
 
     const currentTheme = THEMES[theme];
 
+    if (!app) {
+        return (
+             <div className="min-h-screen bg-red-100 flex flex-col justify-center items-center p-4 text-red-800">
+                <ShieldAlert className="w-16 h-16 mb-4" />
+                <h1 className="text-2xl font-bold mb-2">การเชื่อมต่อ Firebase ผิดพลาด</h1>
+                <p className="text-center">ไม่สามารถเริ่มต้น Firebase ได้<br/>กรุณาตรวจสอบ `firebaseConfig` ในโค้ดของคุณ</p>
+            </div>
+        )
+    }
+
+    if (authLoading) {
+        return (
+            <div className={`min-h-screen ${currentTheme.bg} flex justify-center items-center`}>
+                <Loader2 className="w-16 h-16 animate-spin text-pink-500" />
+            </div>
+        );
+    }
+
     return (
         <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} ${currentTheme.font} p-2 sm:p-4 transition-colors duration-500`}>
-            <Header view={view} setView={setView} currentTheme={currentTheme} />
+            <Header 
+                user={user} 
+                onLoginClick={() => setShowLogin(true)} 
+                onLogoutClick={handleLogout}
+                currentTheme={currentTheme} 
+            />
             <ThemeSwitcher theme={theme} setTheme={setTheme} />
             
-            {view === 'public' && <PublicCalendar currentDate={currentDate} setCurrentDate={setCurrentDate} employees={employees} schedules={processedSchedules} currentTheme={currentTheme}/>}
-            {view === 'login' && <LoginScreen onLogin={handleLogin} setView={setView} currentTheme={currentTheme}/>}
-            {view === 'admin' && <AdminDashboard 
-                currentDate={currentDate} 
-                setCurrentDate={setCurrentDate} 
-                employees={employees} 
-                setEmployees={setEmployees}
-                schedules={schedules} 
-                processedSchedules={processedSchedules}
-                setSchedules={setSchedules}
-                currentTheme={currentTheme}
-            />}
+            {user ? (
+                <AdminDashboard 
+                    currentDate={currentDate} 
+                    setCurrentDate={setCurrentDate} 
+                    employees={employees} 
+                    schedules={schedules} 
+                    processedSchedules={processedSchedules}
+                    currentTheme={currentTheme}
+                />
+            ) : (
+                <PublicCalendar 
+                    currentDate={currentDate} 
+                    setCurrentDate={setCurrentDate} 
+                    employees={employees} 
+                    schedules={processedSchedules} 
+                    currentTheme={currentTheme}
+                    dataLoading={dataLoading}
+                />
+            )}
+
+            {showLogin && <LoginScreen onClose={() => setShowLogin(false)} currentTheme={currentTheme}/>}
+            
             <Footer currentTheme={currentTheme}/>
         </div>
     );
 }
 
-// Components
-const Header = ({ view, setView, currentTheme }) => (
+// --- Components ---
+
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, currentTheme }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4">
+            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm text-center">
+                <ShieldAlert className={`w-16 h-16 mx-auto mb-4 ${currentTheme.accent.replace('bg-', 'text-')}`} />
+                <h3 className="text-xl font-bold mb-2">{title}</h3>
+                <p className="text-gray-600 mb-6">{message}</p>
+                <div className="flex justify-center gap-4">
+                    <button onClick={onClose} className="py-2 px-6 bg-gray-200 text-gray-800 font-bold rounded-lg hover:bg-gray-300 transition-colors">ยกเลิก</button>
+                    <button onClick={onConfirm} className={`py-2 px-6 ${currentTheme.primary} text-white font-bold rounded-lg hover:opacity-90 transition-opacity`}>ยืนยัน</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const Header = ({ user, onLoginClick, onLogoutClick, currentTheme }) => (
     <header className={`p-4 rounded-xl shadow-lg mb-4 flex justify-between items-center ${currentTheme.secondary} print-hide`}>
         <div className="flex items-center">
             <img src="https://placehold.co/50x50/ffffff/000000?text=S" alt="Logo" className="rounded-full mr-3 border-2 border-white"/>
             <h1 className="text-xl sm:text-3xl font-bold text-white">ตารางงานประจำเดือน</h1>
         </div>
         <div>
-            {view === 'public' && <button onClick={() => setView('login')} className={`flex items-center gap-2 ${currentTheme.primary} text-white font-bold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105`}><LogIn size={20}/> แอดมิน</button>}
-            {view === 'admin' && <button onClick={() => setView('public')} className={`flex items-center gap-2 ${currentTheme.accent} text-white font-bold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105`}><LogOut size={20}/> ออกจากระบบ</button>}
+            {user ? (
+                <button onClick={onLogoutClick} className={`flex items-center gap-2 ${currentTheme.accent} text-white font-bold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105`}><LogOut size={20}/> ออกจากระบบ</button>
+            ) : (
+                <button onClick={onLoginClick} className={`flex items-center gap-2 ${currentTheme.primary} text-white font-bold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105`}><LogIn size={20}/> แอดมิน</button>
+            )}
         </div>
     </header>
 );
@@ -127,7 +274,7 @@ const ThemeSwitcher = ({ theme, setTheme }) => (
     </div>
 );
 
-const PublicCalendar = ({ currentDate, setCurrentDate, employees, schedules, currentTheme }) => {
+const PublicCalendar = ({ currentDate, setCurrentDate, employees, schedules, currentTheme, dataLoading }) => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
@@ -135,7 +282,12 @@ const PublicCalendar = ({ currentDate, setCurrentDate, employees, schedules, cur
     const changeMonth = (offset) => setCurrentDate(new Date(year, month + offset, 1));
 
     return (
-        <div id="printable-area" className="bg-white/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg">
+        <div id="printable-area" className="bg-white/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg relative">
+            {dataLoading && !employees.length && (
+                <div className="absolute inset-0 bg-white/50 flex justify-center items-center z-10 rounded-2xl">
+                    <Loader2 className="w-12 h-12 animate-spin text-pink-500" />
+                </div>
+            )}
             <CalendarHeader currentDate={currentDate} changeMonth={changeMonth} currentTheme={currentTheme} />
             <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center font-bold text-gray-600 my-2">
                 {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map(day => <div key={day} className="py-2">{day}</div>)}
@@ -213,25 +365,57 @@ const Legend = () => (
     </div>
 );
 
-const LoginScreen = ({ onLogin, setView, currentTheme }) => {
+const LoginScreen = ({ onClose, currentTheme }) => {
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const handleSubmit = (e) => { e.preventDefault(); onLogin(password); };
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        if (!auth) {
+            setError("Authentication service is not available.");
+            setLoading(false);
+            return;
+        }
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            // The onAuthStateChanged listener in App.js will handle closing the modal
+        } catch (err) {
+            console.error("Firebase Login Error: ", err.code);
+            // This error code is generic to prevent account enumeration attacks
+            if (err.code === 'auth/invalid-credential') {
+                 setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
+            } else {
+                setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <div className="flex justify-center items-center mt-10">
-            <div className="w-full max-w-sm p-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl text-center">
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-40 p-4" onClick={onClose}>
+            <div className="w-full max-w-sm p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl text-center" onClick={e => e.stopPropagation()}>
                 <h2 className="text-2xl font-bold mb-6">เข้าสู่ระบบแอดมิน</h2>
                 <img src="https://placehold.co/100x100/46C2CB/FFFFFF?text=Admin" alt="Admin Lock" className="mx-auto mb-4 rounded-full border-4 border-white shadow-lg"/>
                 <form onSubmit={handleSubmit}>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="รหัสผ่าน (admin1234)" className="w-full p-3 mb-4 border-2 border-gray-200 rounded-lg text-center focus:outline-none focus:border-pink-400" />
-                    <button type="submit" className={`w-full ${currentTheme.primary} text-white font-bold py-3 px-4 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105`}>เข้าสู่ระบบ</button>
-                    <button type="button" onClick={() => setView('public')} className="mt-4 text-gray-500 hover:text-gray-800">กลับไปหน้าหลัก</button>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="อีเมล" required className="w-full p-3 mb-3 border-2 border-gray-200 rounded-lg text-center focus:outline-none focus:border-pink-400" />
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="รหัสผ่าน" required className="w-full p-3 mb-4 border-2 border-gray-200 rounded-lg text-center focus:outline-none focus:border-pink-400" />
+                    {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+                    <button type="submit" disabled={loading} className={`w-full ${currentTheme.primary} text-white font-bold py-3 px-4 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105 flex justify-center items-center disabled:opacity-50`}>
+                        {loading ? <Loader2 className="animate-spin" /> : 'เข้าสู่ระบบ'}
+                    </button>
+                    <button type="button" onClick={onClose} className="mt-4 text-gray-500 hover:text-gray-800">ยกเลิก</button>
                 </form>
             </div>
         </div>
     );
 };
 
-const AdminDashboard = ({ currentDate, setCurrentDate, employees, setEmployees, schedules, processedSchedules, setSchedules, currentTheme }) => {
+const AdminDashboard = ({ currentDate, setCurrentDate, employees, schedules, processedSchedules, currentTheme }) => {
     const [selectedDate, setSelectedDate] = useState(null);
     const [modalSchedule, setModalSchedule] = useState({});
 
@@ -241,28 +425,34 @@ const AdminDashboard = ({ currentDate, setCurrentDate, employees, setEmployees, 
         setModalSchedule(schedules[dateStr] || {});
     };
 
-    const handleSaveSchedule = () => {
-        if (!selectedDate) return;
+    const handleSaveSchedule = async () => {
+        if (!selectedDate || !db) return;
         const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-        const newSchedules = {...schedules};
         
-        const currentDaySchedule = {};
-        let hasChanges = false;
+        const scheduleRef = doc(db, "schedules", dateStr);
+        
+        const newDaySchedule = {};
+        let hasAssignments = false;
         employees.forEach(emp => {
             if (modalSchedule[emp.id]) {
-                currentDaySchedule[emp.id] = modalSchedule[emp.id];
-                hasChanges = true;
+                newDaySchedule[emp.id] = modalSchedule[emp.id];
+                hasAssignments = true;
             }
         });
 
-        if (hasChanges) {
-            newSchedules[dateStr] = currentDaySchedule;
-        } else {
-            delete newSchedules[dateStr];
+        try {
+            if (hasAssignments) {
+                await setDoc(scheduleRef, newDaySchedule);
+            } else {
+                // If no one is scheduled, delete the document for that day
+                await deleteDoc(scheduleRef);
+            }
+        } catch (error) {
+            console.error("Error saving schedule:", error);
+            alert("เกิดข้อผิดพลาดในการบันทึกตารางงาน");
+        } finally {
+            setSelectedDate(null);
         }
-        
-        setSchedules(newSchedules);
-        setSelectedDate(null);
     };
     
     return (
@@ -271,7 +461,7 @@ const AdminDashboard = ({ currentDate, setCurrentDate, employees, setEmployees, 
                 <AdminCalendar currentDate={currentDate} setCurrentDate={setCurrentDate} schedules={processedSchedules} onDayClick={handleDayClick} currentTheme={currentTheme} />
             </div>
             <div className="space-y-6">
-                <EmployeeManager employees={employees} setEmployees={setEmployees} currentTheme={currentTheme}/>
+                <EmployeeManager employees={employees} currentTheme={currentTheme}/>
             </div>
             {selectedDate && (
                 <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
@@ -284,7 +474,7 @@ const AdminDashboard = ({ currentDate, setCurrentDate, employees, setEmployees, 
                                     <select 
                                         value={modalSchedule[emp.id] || ''}
                                         onChange={(e) => setModalSchedule({...modalSchedule, [emp.id]: e.target.value})}
-                                        className="p-2 border rounded-lg"
+                                        className="p-2 border rounded-lg bg-white"
                                     >
                                         <option value="">-- ว่าง --</option>
                                         <option value="morning">กะเช้า</option>
@@ -297,7 +487,7 @@ const AdminDashboard = ({ currentDate, setCurrentDate, employees, setEmployees, 
                         </div>
                         <div className="mt-6 p-3 bg-blue-50 text-blue-800 text-sm rounded-lg flex items-start gap-2">
                             <Info size={20} className="flex-shrink-0 mt-0.5"/>
-                            <span><b>หมายเหตุ:</b> หากมีพนักงานลาหยุด 1 คน กะของอีกคนจะถูกเปลี่ยนเป็น <b>กะพิเศษ</b> โดยอัตโนมัติ</span>
+                            <span><b>หมายเหตุ:</b> หากมีพนักงานทำงานคนเดียว กะจะถูกเปลี่ยนเป็น <b>กะพิเศษ</b> โดยอัตโนมัติในหน้าแสดงผล</span>
                         </div>
                         <div className="flex justify-end gap-3 mt-6">
                             <button onClick={() => setSelectedDate(null)} className="flex items-center gap-2 bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400"><XCircle size={20}/>ยกเลิก</button>
@@ -361,37 +551,113 @@ const AdminCalendar = ({ currentDate, setCurrentDate, schedules, onDayClick, cur
     );
 };
 
-const EmployeeManager = ({ employees, setEmployees, currentTheme }) => {
+const EmployeeManager = ({ employees, currentTheme }) => {
     const [newName, setNewName] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [editingName, setEditingName] = useState('');
-    const addEmployee = () => { if (newName.trim()) { setEmployees([...employees, { id: `emp${Date.now()}`, name: newName.trim() }]); setNewName(''); } };
-    const deleteEmployee = (id) => { if (window.confirm('คุณแน่ใจหรือไม่ว่าจะลบพนักงานคนนี้?')) { setEmployees(employees.filter(emp => emp.id !== id)); } };
-    const startEditing = (employee) => { setEditingId(employee.id); setEditingName(employee.name); };
-    const saveEdit = () => { setEmployees(employees.map(emp => emp.id === editingId ? { ...emp, name: editingName } : emp)); setEditingId(null); setEditingName(''); };
+    
+    // State for confirmation modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [employeeToDelete, setEmployeeToDelete] = useState(null);
+
+    const addEmployee = async () => { 
+        if (newName.trim() && db) { 
+            try {
+                // Use addDoc to let Firestore generate an ID
+                await addDoc(collection(db, "employees"), { name: newName.trim() });
+                setNewName('');
+            } catch (error) {
+                console.error("Error adding employee:", error);
+                alert("เกิดข้อผิดพลาดในการเพิ่มพนักงาน");
+            }
+        } 
+    };
+    
+    const handleDeleteClick = (employee) => {
+        setEmployeeToDelete(employee);
+        setIsModalOpen(true);
+    };
+
+    const confirmDeleteEmployee = async () => {
+        if (employeeToDelete && db) {
+            try {
+                await deleteDoc(doc(db, "employees", employeeToDelete.id));
+                // Note: This does not delete the employee's schedules.
+                // For a full implementation, you might need a Firebase Function
+                // to clean up schedules associated with the deleted employee.
+            } catch (error) {
+                console.error("Error deleting employee: ", error);
+                alert("เกิดข้อผิดพลาดในการลบพนักงาน");
+            } finally {
+                setIsModalOpen(false);
+                setEmployeeToDelete(null);
+            }
+        }
+    };
+
+    const startEditing = (employee) => { 
+        setEditingId(employee.id); 
+        setEditingName(employee.name); 
+    };
+    
+    const saveEdit = async () => { 
+        if (editingId && editingName.trim() && db) {
+            try {
+                const empRef = doc(db, "employees", editingId);
+                await updateDoc(empRef, { name: editingName.trim() });
+            } catch (error) {
+                console.error("Error updating employee: ", error);
+                alert("เกิดข้อผิดพลาดในการแก้ไขชื่อพนักงาน");
+            } finally {
+                setEditingId(null); 
+                setEditingName('');
+            }
+        }
+    };
 
     return (
-        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg">
-            <h3 className="text-lg font-bold mb-3 flex items-center"><Users className="mr-2" />จัดการพนักงาน</h3>
-            <div className="space-y-2 mb-4">
-                {employees.map(emp => (
-                    <div key={emp.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                        {editingId === emp.id ? ( <input type="text" value={editingName} onChange={e => setEditingName(e.target.value)} className="p-1 border rounded-md w-full"/> ) : ( <span>{emp.name}</span> )}
-                        <div className="flex gap-2">
-                             {editingId === emp.id ? (
-                                <><button onClick={saveEdit} className="text-green-600 hover:text-green-800"><Save size={18}/></button><button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-700"><XCircle size={18}/></button></>
-                            ) : (
-                                <><button onClick={() => startEditing(emp)} className="text-blue-600 hover:text-blue-800"><Edit size={18}/></button><button onClick={() => deleteEmployee(emp.id)} className="text-red-600 hover:text-red-800"><Trash2 size={18}/></button></>
+        <>
+            <ConfirmationModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={confirmDeleteEmployee}
+                title="ยืนยันการลบ"
+                message={`คุณแน่ใจหรือไม่ว่าต้องการลบพนักงาน "${employeeToDelete?.name}"? การกระทำนี้ไม่สามารถย้อนกลับได้`}
+                currentTheme={currentTheme}
+            />
+            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg">
+                <h3 className="text-lg font-bold mb-3 flex items-center"><Users className="mr-2" />จัดการพนักงาน</h3>
+                <div className="space-y-2 mb-4 max-h-60 overflow-y-auto pr-2">
+                    {employees.map(emp => (
+                        <div key={emp.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                            {editingId === emp.id ? ( 
+                                <input type="text" value={editingName} onChange={e => setEditingName(e.target.value)} className="p-1 border rounded-md w-full bg-white"/> 
+                            ) : ( 
+                                <span>{emp.name}</span> 
                             )}
+                            <div className="flex gap-2">
+                                 {editingId === emp.id ? (
+                                    <><button onClick={saveEdit} className="text-green-600 hover:text-green-800"><Save size={18}/></button><button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-700"><XCircle size={18}/></button></>
+                                ) : (
+                                    <><button onClick={() => startEditing(emp)} className="text-blue-600 hover:text-blue-800"><Edit size={18}/></button><button onClick={() => handleDeleteClick(emp)} className="text-red-600 hover:text-red-800"><Trash2 size={18}/></button></>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
+                <div className="flex gap-2">
+                    <input 
+                        type="text" 
+                        value={newName} 
+                        onChange={(e) => setNewName(e.target.value)} 
+                        placeholder="ชื่อพนักงานใหม่" 
+                        className="w-full p-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-400" 
+                        onKeyPress={(e) => e.key === 'Enter' && addEmployee()}
+                    />
+                    <button onClick={addEmployee} className={`p-2 rounded-lg ${currentTheme.secondary} text-white shadow-md hover:opacity-90`}><UserPlus /></button>
+                </div>
             </div>
-            <div className="flex gap-2">
-                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="ชื่อพนักงานใหม่" className="w-full p-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-400" />
-                <button onClick={addEmployee} className={`p-2 rounded-lg ${currentTheme.secondary} text-white shadow-md hover:opacity-90`}><UserPlus /></button>
-            </div>
-        </div>
+        </>
     );
 };
 
