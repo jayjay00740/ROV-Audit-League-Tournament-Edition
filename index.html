@@ -1149,16 +1149,22 @@
         async function generateAndSchedulePairings() {
             if (!activeTournament) return;
 
-            const upcomingMatchTeamIds = (activeTournament.schedule || [])
-                .flatMap(day => day.matches.filter(match => !match.winner && !match.isDraw)) // FIX: Also exclude drawn matches
+            // Find all teams that are part of a match that hasn't been decided yet (no winner and not a draw).
+            const teamsInPendingMatches = (activeTournament.schedule || [])
+                .flatMap(day => day.matches.filter(match => !match.winner && !match.isDraw))
                 .flatMap(match => [match.team1Id, match.team2Id]);
 
-            let availableTeams = activeTournament.standings
-                .filter(team => !upcomingMatchTeamIds.includes(team.teamId))
-                .map(t => t.teamId);
+            // If there are any teams still in pending matches, we cannot generate new pairs.
+            if (teamsInPendingMatches.length > 0) {
+                showAlert('การแข่งขันยังไม่เสร็จสิ้น', 'กรุณาบันทึกผลการแข่งขันที่ค้างอยู่ทั้งหมดก่อนสร้างคู่ใหม่');
+                return;
+            }
+
+            // If we're here, all previous matches are completed. All teams are available for pairing.
+            let availableTeams = activeTournament.standings.map(t => t.teamId);
 
             if (availableTeams.length < 2) {
-                showAlert('ไม่สามารถสร้างคู่', 'ไม่มีทีมที่พร้อมแข่งขันเพียงพอที่จะสร้างคู่ใหม่');
+                showAlert('ไม่สามารถสร้างคู่', 'มีทีมที่พร้อมแข่งขันไม่เพียงพอ (อาจจะเหลือทีมเดียว)');
                 return;
             }
 
@@ -1187,18 +1193,22 @@
             while (true) {
                 let todayString = toISODateString(scheduleDate);
                 let daySchedule = schedule.find(s => s.date === todayString);
+                
+                if (daySchedule && daySchedule.matches.length >= 2) {
+                    scheduleDate.setDate(scheduleDate.getDate() + 1);
+                    continue; // This day is full, check the next one
+                }
+
                 if (!daySchedule) {
                     daySchedule = { date: todayString, matches: [] };
                     schedule.push(daySchedule);
                 }
                 
-                if (daySchedule.matches.length < 2) {
-                    const spaceAvailable = 2 - daySchedule.matches.length;
-                    const pairsToAdd = newPairs.splice(0, spaceAvailable);
-                    pairsToAdd.forEach(pair => daySchedule.matches.push(pair));
-                }
+                const spaceAvailable = 2 - daySchedule.matches.length;
+                const pairsToAdd = newPairs.splice(0, spaceAvailable);
+                pairsToAdd.forEach(pair => daySchedule.matches.push(pair));
 
-                if (newPairs.length === 0) break;
+                if (newPairs.length === 0) break; // All new pairs have been scheduled
 
                 scheduleDate.setDate(scheduleDate.getDate() + 1);
             }
