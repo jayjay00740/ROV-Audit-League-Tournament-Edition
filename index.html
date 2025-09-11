@@ -53,6 +53,11 @@
         .loader { width: 50px; aspect-ratio: 1; border-radius: 50%; border: 8px solid var(--primary-color); border-right-color: var(--secondary-color); animation: l2 1s infinite linear; }
         @keyframes l2 {to{transform: rotate(1turn)}}
 
+        .standings-table { width: 100%; border-collapse: collapse; }
+        .standings-table th, .standings-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .standings-table th { background-color: rgba(0, 255, 255, 0.1); font-family: 'Orbitron', sans-serif; text-transform: uppercase; }
+        .standings-table tbody tr:hover { background-color: rgba(0, 255, 255, 0.05); }
+
         ::-webkit-scrollbar { height: 8px; width: 5px; }
         ::-webkit-scrollbar-track { background: var(--bg-color); }
         ::-webkit-scrollbar-thumb { background: var(--primary-color); }
@@ -76,7 +81,7 @@
                  <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                      <button id="enter-main-view-btn" class="w-full sm:w-auto cyber-button secondary">เข้าสู่หน้าทัวร์นาเมนต์</button>
                  </div>
-            </div>
+             </div>
         </div>
 
         <!-- Main Content View -->
@@ -84,12 +89,12 @@
             <div class="flex flex-col justify-center min-h-[80vh]">
                 <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <h1 class="text-3xl md:text-4xl cursor-pointer" id="main-title">ROV AUDIT LEAGUE</h1>
-                     <div id="guest-controls" class="hidden flex-wrap justify-center items-center gap-2">
-                         <button id="toggle-view-btn-guest" class="cyber-button">ดูสกอร์บอร์ด</button>
-                         <button id="show-rules-btn" class="cyber-button">ข้อมูล & กฎ</button>
-                         <button id="show-history-btn-guest" class="cyber-button">ประวัติ</button>
-                         <button id="show-login-btn" class="cyber-button">สำหรับผู้ดูแล</button>
-                     </div>
+                    <div id="guest-controls" class="hidden flex-wrap justify-center items-center gap-2">
+                        <button id="toggle-view-btn-guest" class="cyber-button">ดูข้อมูลทีม</button>
+                        <button id="show-rules-btn" class="cyber-button">ข้อมูล & กฎ</button>
+                        <button id="show-history-btn-guest" class="cyber-button">ประวัติ</button>
+                        <button id="show-login-btn" class="cyber-button">สำหรับผู้ดูแล</button>
+                    </div>
                 </header>
 
                 <div class="text-center mb-6">
@@ -98,15 +103,29 @@
                 
                 <div id="tournament-podium-main" class="hidden my-8"></div>
                 
-                <!-- Main content area for standings or scoreboard -->
                 <div id="main-content-container">
-                    <div id="tournament-standings-container" class="cyber-panel p-4">
+                    <!-- Standings View -->
+                    <div id="standings-view-container" class="cyber-panel p-4">
                         <div id="standings-placeholder" class="text-center py-16 text-gray-500">
-                            <p>ยังไม่มีทัวร์นาเมนต์ที่กำลังแข่งขัน</p>
-                            <p class="text-sm mt-2">(ผู้ดูแลสามารถสร้างได้จากเมนู)</p>
-                        </div>
-                        <div id="standings-view" class="hidden"></div>
+                             <p>ยังไม่มีทัวร์นาเมนต์ที่กำลังแข่งขัน</p>
+                             <p class="text-sm mt-2">(ผู้ดูแลสามารถสร้างได้จากเมนู)</p>
+                         </div>
+                        <table id="standings-table" class="standings-table hidden">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Team</th>
+                                    <th>Played</th>
+                                    <th>Wins</th>
+                                    <th>Losses</th>
+                                </tr>
+                            </thead>
+                            <tbody id="standings-table-body">
+                                <!-- Standings rows will be injected here -->
+                            </tbody>
+                        </table>
                     </div>
+                    <!-- Scoreboard View -->
                     <div id="scoreboard-dashboard-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <!-- Scoreboard panels will be injected here -->
                     </div>
@@ -119,14 +138,14 @@
                         <h3 id="schedule-date-header" class="text-xl text-accent-color"></h3>
                         <button id="next-day-btn" class="cyber-button text-sm p-2">&gt;</button>
                     </div>
-                    <div id="daily-schedule-list">
+                    <div id="daily-schedule-list" class="space-y-2">
                         <p class="text-center text-gray-500">ไม่มีการแข่งขันในวันนี้</p>
                     </div>
                 </div>
 
                 <div id="admin-controls" class="hidden mt-8">
                     <div class="cyber-panel p-4 flex flex-wrap justify-center gap-2">
-                        <button id="toggle-view-btn-admin" class="cyber-button">ดูสกอร์บอร์ด</button>
+                        <button id="toggle-view-btn-admin" class="cyber-button">ดูข้อมูลทีม</button>
                         <button id="manage-tournament-btn" class="cyber-button">แผงควบคุม</button>
                         <button id="manage-players-btn" class="cyber-button">จัดการผู้เล่น</button>
                         <button id="manage-teams-btn" class="cyber-button">จัดการทีม</button>
@@ -151,231 +170,220 @@
             </form>
         </div>
     </div>
-
-    <div id="manage-tournament-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+     <div id="manage-tournament-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="cyber-panel p-6 w-11/12 max-w-3xl relative">
              <h2 class="text-2xl mb-4">แผงควบคุมแอดมิน</h2>
              <div id="create-tournament-view">
                  <p class="mb-4">ยังไม่มีทัวร์นาเมนต์ที่กำลังดำเนินการอยู่</p>
-                  <div class="flex flex-wrap gap-4">
-                      <button id="show-create-tournament-form-btn" class="cyber-button secondary">สร้างทัวร์นาเมนต์ใหม่</button>
-                      <button id="shuffle-teams-btn" class="cyber-button">สุ่มทีมสำหรับฤดูกาลหน้า</button>
-                  </div>
+                 <div class="flex flex-wrap gap-4">
+                     <button id="show-create-tournament-form-btn" class="cyber-button secondary">สร้างทัวร์นาเมนต์ใหม่</button>
+                     <button id="shuffle-teams-btn" class="cyber-button">สุ่มทีมสำหรับฤดูกาลหน้า</button>
+                 </div>
              </div>
              <div id="active-tournament-view" class="hidden">
-                  <p id="active-tournament-name" class="text-xl text-accent-color mb-4"></p>
-                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <button id="tournament-settings-btn" class="cyber-button">ตั้งค่า/กฎ</button>
-                      <button id="generate-pairings-btn" class="cyber-button">สร้างคู่แข่งขัน</button>
-                      <button id="match-log-btn" class="cyber-button">บันทึกการแข่งขัน</button>
-                      <button id="finalize-tournament-btn" class="cyber-button secondary">สรุปผลทัวร์นาเมนต์</button>
-                      <button id="delete-tournament-btn" class="cyber-button danger">ลบทัวร์นาเมนต์นี้</button>
-                  </div>
+                 <p id="active-tournament-name" class="text-xl text-accent-color mb-4"></p>
+                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <button id="generate-pairs-btn" class="cyber-button">สร้างคู่แข่งขัน</button>
+                     <button id="tournament-settings-btn" class="cyber-button">ตั้งค่า/กฎ</button>
+                     <button id="match-log-btn" class="cyber-button">บันทึกการแข่งขัน</button>
+                     <button id="finalize-tournament-btn" class="cyber-button secondary">สรุปผลทัวร์นาเมนต์</button>
+                     <button id="delete-tournament-btn" class="cyber-button danger">ลบทัวร์นาเมนต์นี้</button>
+                 </div>
              </div>
              <div id="create-tournament-form-view" class="hidden mt-6 pt-4 border-t border-primary-color/30">
-                  <h3 class="text-xl mb-2">สร้างทัวร์นาเมนต์ใหม่</h3>
-                  <form id="create-tournament-form" class="space-y-4">
-                      <div>
-                          <label class="block text-primary-color mb-2">เลือกทีมที่เข้าร่วม (เลขคู่, อย่างน้อย 4 ทีม):</label>
-                          <div id="team-selection-list" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-black/20"></div>
-                      </div>
-                      <div class="flex gap-4">
-                          <button type="submit" class="cyber-button">สร้างและเริ่ม</button>
-                          <button type="button" id="cancel-create-tournament-btn" class="cyber-button secondary">ยกเลิก</button>
-                      </div>
-                  </form>
+                 <h3 class="text-xl mb-2">สร้างทัวร์นาเมนต์ใหม่</h3>
+                 <form id="create-tournament-form" class="space-y-4">
+                     <div>
+                         <label class="block text-primary-color mb-2">เลือกทีมที่เข้าร่วม (เลขคู่, อย่างน้อย 4 ทีม):</label>
+                         <div id="team-selection-list" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-black/20"></div>
+                     </div>
+                     <div class="flex gap-4">
+                         <button type="submit" class="cyber-button">สร้างและเริ่ม</button>
+                         <button type="button" id="cancel-create-tournament-btn" class="cyber-button secondary">ยกเลิก</button>
+                     </div>
+                 </form>
              </div>
              <div class="mt-6 flex justify-end">
                  <button type="button" id="close-manage-tournament-modal-btn" class="cyber-button">ปิด</button>
-            </div>
+             </div>
         </div>
     </div>
 
      <div id="tournament-settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-2xl relative max-h-[90vh] flex flex-col">
-            <h2 class="text-2xl mb-4">ตั้งค่าทัวร์นาเมนต์</h2>
-            <form id="tournament-settings-form" class="flex-grow overflow-y-auto pr-2 space-y-4">
-                <div>
-                    <h3 class="text-xl text-primary-color mb-2">เงินรางวัล</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="prize-1st" class="block text-gold-color">อันดับ 1</label>
-                            <input type="text" id="prize-1st" class="w-full cyber-input" placeholder="เช่น 10,000 บาท">
-                        </div>
-                        <div>
-                            <label for="prize-2nd" class="block text-silver-color">อันดับ 2</label>
-                            <input type="text" id="prize-2nd" class="w-full cyber-input" placeholder="เช่น 5,000 บาท">
-                        </div>
-                        <div>
-                            <label for="prize-3rd" class="block text-bronze-color">อันดับ 3</label>
-                            <input type="text" id="prize-3rd" class="w-full cyber-input" placeholder="เช่น 2,500 บาท">
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <label for="tournament-rules-input" class="text-xl text-primary-color mb-2 block">กฎกติกาการแข่งขัน</label>
-                    <textarea id="tournament-rules-input" rows="10" class="w-full cyber-textarea" placeholder="ใส่กฎการแข่งขันที่นี่..."></textarea>
-                </div>
-            </form>
-            <div class="mt-6 flex justify-end gap-4">
-                <button type="button" id="save-settings-btn" class="cyber-button">บันทึก</button>
-                <button type="button" id="close-settings-modal-btn" class="cyber-button secondary">ปิด</button>
-            </div>
-        </div>
-    </div>
+         <div class="cyber-panel p-6 w-11/12 max-w-2xl relative max-h-[90vh] flex flex-col">
+             <h2 class="text-2xl mb-4">ตั้งค่าทัวร์นาเมนต์</h2>
+             <form id="tournament-settings-form" class="flex-grow overflow-y-auto pr-2 space-y-4">
+                 <div>
+                     <h3 class="text-xl text-primary-color mb-2">เงินรางวัล</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         <div>
+                             <label for="prize-1st" class="block text-gold-color">อันดับ 1</label>
+                             <input type="text" id="prize-1st" class="w-full cyber-input" placeholder="เช่น 10,000 บาท">
+                         </div>
+                         <div>
+                             <label for="prize-2nd" class="block text-silver-color">อันดับ 2</label>
+                             <input type="text" id="prize-2nd" class="w-full cyber-input" placeholder="เช่น 5,000 บาท">
+                         </div>
+                         <div>
+                             <label for="prize-3rd" class="block text-bronze-color">อันดับ 3</label>
+                             <input type="text" id="prize-3rd" class="w-full cyber-input" placeholder="เช่น 2,500 บาท">
+                         </div>
+                     </div>
+                 </div>
+                 <div>
+                     <label for="tournament-rules-input" class="text-xl text-primary-color mb-2 block">กฎกติกาการแข่งขัน</label>
+                     <textarea id="tournament-rules-input" rows="10" class="w-full cyber-textarea" placeholder="ใส่กฎการแข่งขันที่นี่..."></textarea>
+                 </div>
+             </form>
+             <div class="mt-6 flex justify-end gap-4">
+                 <button type="button" id="save-settings-btn" class="cyber-button">บันทึก</button>
+                 <button type="button" id="close-settings-modal-btn" class="cyber-button secondary">ปิด</button>
+             </div>
+         </div>
+     </div>
 
-    <div id="rules-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-3xl relative max-h-[90vh] flex flex-col">
-            <h2 class="text-3xl mb-4 text-center text-accent-color">ข้อมูล & กฎการแข่งขัน</h2>
-            <div id="rules-content" class="flex-grow overflow-y-auto pr-2 space-y-6">
-                <div id="prize-pool-display"></div>
-                <div id="rules-display" class="whitespace-pre-wrap"></div>
-            </div>
-            <div class="mt-6 flex justify-center">
-                <button type="button" id="close-rules-modal-btn" class="cyber-button">ปิด</button>
-            </div>
-        </div>
-    </div>
+     <div id="rules-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-6 w-11/12 max-w-3xl relative max-h-[90vh] flex flex-col">
+             <h2 class="text-3xl mb-4 text-center text-accent-color">ข้อมูล & กฎการแข่งขัน</h2>
+             <div id="rules-content" class="flex-grow overflow-y-auto pr-2 space-y-6">
+                 <div id="prize-pool-display"></div>
+                 <div id="rules-display" class="whitespace-pre-wrap"></div>
+             </div>
+             <div class="mt-6 flex justify-center">
+                 <button type="button" id="close-rules-modal-btn" class="cyber-button">ปิด</button>
+             </div>
+         </div>
+     </div>
     
-    <div id="match-log-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-2xl relative max-h-[90vh] flex flex-col">
-            <h2 class="text-2xl mb-4 text-center">บันทึกการแข่งขัน (Match Log)</h2>
-            <div id="match-log-list" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
-            <div class="mt-6 flex justify-end">
-                <button type="button" id="close-match-log-modal-btn" class="cyber-button secondary">ปิด</button>
-            </div>
-        </div>
-    </div>
+     <div id="match-log-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-6 w-11/12 max-w-2xl relative max-h-[90vh] flex flex-col">
+             <h2 class="text-2xl mb-4 text-center">บันทึกการแข่งขัน (Match Log)</h2>
+             <div id="match-log-list" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
+             <div class="mt-6 flex justify-end">
+                 <button type="button" id="close-match-log-modal-btn" class="cyber-button secondary">ปิด</button>
+             </div>
+         </div>
+     </div>
 
-    <div id="record-bracket-match-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-md relative">
-            <h2 class="text-2xl mb-4">บันทึกผลการแข่งขัน</h2>
-            <form id="record-bracket-match-form" class="space-y-4">
-                <p id="match-description" class="text-center text-lg"></p>
-                <div>
-                    <label for="bracket-winner-team" class="block text-primary-color mb-1">ทีมที่ชนะ</label>
-                    <select id="bracket-winner-team" class="w-full cyber-select" required></select>
-                </div>
-                <div>
-                    <label for="bracket-mvp-player" class="block text-primary-color mb-1">ผู้เล่น MVP</label>
-                    <select id="bracket-mvp-player" class="w-full cyber-select" required disabled></select>
-                </div>
-                <div class="mt-6 flex justify-end space-x-4">
-                    <button type="submit" class="cyber-button">บันทึก</button>
-                    <button type="button" id="close-record-bracket-match-modal-btn" class="cyber-button secondary">ยกเลิก</button>
-                </div>
-            </form>
-        </div>
-    </div>
+     <div id="record-match-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-6 w-11/12 max-w-md relative">
+             <h2 class="text-2xl mb-4">บันทึกผลการแข่งขัน</h2>
+             <form id="record-match-form" class="space-y-4">
+                 <p id="match-description" class="text-center text-lg"></p>
+                 <div>
+                     <label for="winner-team" class="block text-primary-color mb-1">ทีมที่ชนะ</label>
+                     <select id="winner-team" class="w-full cyber-select" required></select>
+                 </div>
+                 <div>
+                     <label for="mvp-player" class="block text-primary-color mb-1">ผู้เล่น MVP</label>
+                     <select id="mvp-player" class="w-full cyber-select" required disabled></select>
+                 </div>
+                 <div class="mt-6 flex justify-end space-x-4">
+                     <button type="submit" class="cyber-button">บันทึก</button>
+                     <button type="button" id="close-record-match-modal-btn" class="cyber-button secondary">ยกเลิก</button>
+                 </div>
+             </form>
+         </div>
+     </div>
 
-    <div id="match-details-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-8 w-11/12 max-w-md text-center relative">
-             <button id="close-match-details-modal-btn" class="absolute top-2 right-4 text-2xl text-primary-color hover:text-accent-color">&times;</button>
-            <h2 id="match-details-title" class="text-2xl mb-4">รายละเอียดการแข่งขัน</h2>
-            <div id="match-details-content" class="space-y-3"></div>
-        </div>
-    </div>
+     <div id="manage-players-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
+             <h2 class="text-2xl mb-4">จัดการผู้เล่น</h2>
+             <div class="mb-6">
+                 <h3 class="text-xl text-primary-color mb-2">รายชื่อผู้เล่นทั้งหมด</h3>
+                 <div id="players-list-admin" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+             </div>
+             <div class="mb-4 pt-4 border-t border-primary-color/30">
+                 <h3 class="text-xl text-primary-color mb-2">เพิ่มผู้เล่นใหม่</h3>
+                 <form id="add-player-form" class="flex gap-2">
+                     <input id="new-player-name" type="text" placeholder="ชื่อผู้เล่นใหม่" class="w-full cyber-input" required>
+                     <button type="submit" class="cyber-button">เพิ่ม</button>
+                 </form>
+             </div>
+             <div class="mt-6 flex justify-end">
+                 <button type="button" id="close-manage-players-modal-btn" class="cyber-button secondary">ปิด</button>
+             </div>
+         </div>
+     </div>
 
-    <div id="manage-players-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
-            <h2 class="text-2xl mb-4">จัดการผู้เล่น</h2>
-            <div class="mb-6">
-                <h3 class="text-xl text-primary-color mb-2">รายชื่อผู้เล่นทั้งหมด</h3>
-                <div id="players-list-admin" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
-            </div>
-            <div class="mb-4 pt-4 border-t border-primary-color/30">
-                <h3 class="text-xl text-primary-color mb-2">เพิ่มผู้เล่นใหม่</h3>
-                <form id="add-player-form" class="flex gap-2">
-                    <input id="new-player-name" type="text" placeholder="ชื่อผู้เล่นใหม่" class="w-full cyber-input" required>
-                    <button type="submit" class="cyber-button">เพิ่ม</button>
-                </form>
-            </div>
-            <div class="mt-6 flex justify-end">
-                <button type="button" id="close-manage-players-modal-btn" class="cyber-button secondary">ปิด</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="manage-teams-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
-            <h2 class="text-2xl mb-4">จัดการทีม</h2>
-            <div class="mb-6">
-                <h3 class="text-xl text-primary-color mb-2">รายชื่อทีมปัจจุบัน</h3>
-                <div id="teams-list-admin" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
-            </div>
-            <div class="mb-4 pt-4 border-t border-primary-color/30">
-                <h3 class="text-xl text-primary-color mb-2">เพิ่มทีมใหม่</h3>
-                <form id="add-team-form" class="space-y-2">
-                    <input id="new-team-name" type="text" placeholder="ชื่อทีมใหม่" class="w-full cyber-input" required>
-                     <input id="new-team-logo" type="url" placeholder="URL โลโก้ทีม (ถ้ามี)" class="w-full cyber-input">
-                    <button type="submit" class="w-full cyber-button">เพิ่มทีม</button>
-                </form>
-            </div>
-            <div class="mt-6 flex justify-end">
-                <button type="button" id="close-manage-teams-modal-btn" class="cyber-button secondary">ปิด</button>
-            </div>
-        </div>
-    </div>
-    <div id="team-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
-            <h2 id="team-modal-title" class="text-2xl mb-4"></h2>
-            <form id="team-edit-form">
-                <div id="team-name-input-container" class="mb-2">
-                    <label class="block text-primary-color mb-1">ชื่อทีม</label>
-                    <input id="team-name-input" type="text" class="w-full cyber-input" disabled>
-                </div>
-                 <div id="team-logo-input-container" class="mb-4">
-                    <label class="block text-primary-color mb-1">URL โลโก้</label>
-                    <input id="team-logo-input" type="url" class="w-full cyber-input" disabled>
-                </div>
-                <h3 class="text-xl text-primary-color mb-2">สมาชิกในทีม</h3>
-                <div id="team-members-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
-                <div class="mt-6 flex justify-end space-x-4">
-                    <button type="submit" id="save-team-btn" class="cyber-button hidden">Save Changes</button>
-                    <button type="button" id="close-team-modal-btn" class="cyber-button secondary">Close</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-6 w-11/12 max-w-2xl relative max-h-[90vh] flex flex-col">
-            <h2 class="text-3xl mb-4 text-center text-accent-color">ประวัติทัวร์นาเมนต์</h2>
-            <div id="history-list" class="flex-grow overflow-y-auto pr-2 space-y-4"></div>
-            <div class="mt-6 flex justify-end">
-                <button type="button" id="close-history-modal-btn" class="cyber-button">Close</button>
-            </div>
-        </div>
-    </div>
-    <div id="alert-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-8 w-11/12 max-w-sm text-center">
-            <h2 id="alert-title" class="text-2xl mb-4 text-yellow-300"></h2>
-            <p id="alert-message" class="mb-6"></p>
-            <button id="close-alert-modal-btn" class="cyber-button">ตกลง</button>
-        </div>
-    </div>
-    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="cyber-panel p-8 w-11/12 max-w-md text-center">
-            <h2 id="confirm-title" class="text-2xl mb-4 text-yellow-300"></h2>
-            <p id="confirm-message" class="mb-6"></p>
-            <div class="flex justify-center gap-4">
-                <button id="confirm-ok-btn" class="cyber-button danger">ยืนยัน</button>
-                <button id="confirm-cancel-btn" class="cyber-button secondary">ยกเลิก</button>
-            </div>
-        </div>
-    </div>
+     <div id="manage-teams-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
+             <h2 class="text-2xl mb-4">จัดการทีม</h2>
+             <div class="mb-6">
+                 <h3 class="text-xl text-primary-color mb-2">รายชื่อทีมปัจจุบัน</h3>
+                 <div id="teams-list-admin" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+             </div>
+             <div class="mb-4 pt-4 border-t border-primary-color/30">
+                 <h3 class="text-xl text-primary-color mb-2">เพิ่มทีมใหม่</h3>
+                 <form id="add-team-form" class="space-y-2">
+                     <input id="new-team-name" type="text" placeholder="ชื่อทีมใหม่" class="w-full cyber-input" required>
+                      <input id="new-team-logo" type="url" placeholder="URL โลโก้ทีม (ถ้ามี)" class="w-full cyber-input">
+                     <button type="submit" class="w-full cyber-button">เพิ่มทีม</button>
+                 </form>
+             </div>
+             <div class="mt-6 flex justify-end">
+                 <button type="button" id="close-manage-teams-modal-btn" class="cyber-button secondary">ปิด</button>
+             </div>
+         </div>
+     </div>
+     <div id="team-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
+             <h2 id="team-modal-title" class="text-2xl mb-4"></h2>
+             <form id="team-edit-form">
+                 <div id="team-name-input-container" class="mb-2">
+                     <label class="block text-primary-color mb-1">ชื่อทีม</label>
+                     <input id="team-name-input" type="text" class="w-full cyber-input" disabled>
+                 </div>
+                  <div id="team-logo-input-container" class="mb-4">
+                     <label class="block text-primary-color mb-1">URL โลโก้</label>
+                     <input id="team-logo-input" type="url" class="w-full cyber-input" disabled>
+                 </div>
+                 <h3 class="text-xl text-primary-color mb-2">สมาชิกในทีม</h3>
+                 <div id="team-members-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                 <div class="mt-6 flex justify-end space-x-4">
+                     <button type="submit" id="save-team-btn" class="cyber-button hidden">Save Changes</button>
+                     <button type="button" id="close-team-modal-btn" class="cyber-button secondary">Close</button>
+                 </div>
+             </form>
+         </div>
+     </div>
+     <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-6 w-11/12 max-w-2xl relative max-h-[90vh] flex flex-col">
+             <h2 class="text-3xl mb-4 text-center text-accent-color">ประวัติทัวร์นาเมนต์</h2>
+             <div id="history-list" class="flex-grow overflow-y-auto pr-2 space-y-4"></div>
+             <div class="mt-6 flex justify-center">
+                 <button type="button" id="close-history-modal-btn" class="cyber-button">Close</button>
+             </div>
+         </div>
+     </div>
+     <div id="alert-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-8 w-11/12 max-w-sm text-center">
+             <h2 id="alert-title" class="text-2xl mb-4 text-yellow-300"></h2>
+             <p id="alert-message" class="mb-6"></p>
+             <button id="close-alert-modal-btn" class="cyber-button">ตกลง</button>
+         </div>
+     </div>
+     <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+         <div class="cyber-panel p-8 w-11/12 max-w-md text-center">
+             <h2 id="confirm-title" class="text-2xl mb-4 text-yellow-300"></h2>
+             <p id="confirm-message" class="mb-6"></p>
+             <div class="flex justify-center gap-4">
+                 <button id="confirm-ok-btn" class="cyber-button danger">ยืนยัน</button>
+                 <button id="confirm-cancel-btn" class="cyber-button secondary">ยกเลิก</button>
+             </div>
+         </div>
+     </div>
 
     <footer class="fixed bottom-4 right-4 text-xs text-primary-color/40">
         Developed by JJ
     </footer>
 
     <script type="module">
-        // --- SDK IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, addDoc, query, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- FIREBASE CONFIGURATION (UPDATED) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBcDxcIc1ZgCGK2FiaCnbvLxp_WHdALOFk",
             authDomain: "rov-a-leaguetournament.firebaseapp.com",
@@ -385,16 +393,18 @@
             appId: "1:103695993756:web:4f96a3f623768d191f1659",
             measurementId: "G-V2K7ZM46K3"
         };
-
-        // --- FIREBASE INITIALIZATION ---
+        
         let app, auth, db, analytics;
         try {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            analytics = getAnalytics(app); // Added Analytics
+            analytics = getAnalytics(app);
             setPersistence(auth, browserLocalPersistence); 
-        } catch (error) { console.error("Firebase initialization failed:", error); }
+        } catch (error) { 
+            console.error("Firebase initialization failed:", error); 
+            document.getElementById('loading-view').innerHTML = `<p class="text-red-500">Firebase initialization failed. Please check the console.</p>`;
+        }
         
         // --- Global State ---
         let teamsData = [];
@@ -409,6 +419,14 @@
         const mainView = document.getElementById('main-view');
         const loginModal = document.getElementById('login-modal');
 
+        // --- Helper Functions ---
+        function toISODateString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => {
             onAuthStateChanged(auth, user => {
@@ -419,9 +437,7 @@
                     signInAnonymously(auth).catch(error => {
                         console.error("Anonymous sign-in failed:", error);
                         if (error.code === 'auth/admin-restricted-operation') {
-                            showAlert('การตั้งค่าไม่สมบูรณ์', 'กรุณาเปิดใช้งาน Anonymous Sign-In ใน Firebase Console เพื่อให้ผู้ใช้ทั่วไปสามารถเข้าชมได้');
-                        } else {
-                            showAlert('Connection Error', 'Could not connect to the server. Please refresh the page.');
+                             showAlert('การตั้งค่าไม่ถูกต้อง', 'กรุณาเปิดใช้งาน Anonymous Sign-In ใน Firebase Authentication console');
                         }
                     });
                 }
@@ -432,11 +448,34 @@
         // --- Data Listeners ---
         function initializeDataListeners() {
             showView('loading');
+            
             Object.values(listeners).forEach(unsubscribe => unsubscribe && unsubscribe());
-            listeners.teams = onSnapshot(collection(db, "teams"), s => { teamsData = s.docs.map(d => ({ id: d.id, ...d.data() })); updateUI(); }, e => console.error("Error listening to teams:", e));
-            listeners.players = onSnapshot(collection(db, "players"), s => { playersData = s.docs.map(d => ({ id: d.id, ...d.data() })); updateUI(); }, e => console.error("Error listening to players:", e));
-            listeners.history = onSnapshot(collection(db, "history"), s => { historyData = s.docs.map(d => ({ id: d.id, ...d.data() })); updateUI(); }, e => console.error("Error listening to history:", e));
-            listeners.tournament = onSnapshot(doc(db, "tournaments", "active"), d => { activeTournament = d.exists() ? { id: d.id, ...d.data() } : null; updateUI(); }, e => console.error("Error listening to tournament:", e));
+
+            const onDataError = (collectionName, error) => {
+                console.error(`Error fetching ${collectionName}:`, error);
+                showAlert('เกิดข้อผิดพลาด', `ไม่สามารถโหลดข้อมูล ${collectionName} ได้: ${error.message}`);
+            };
+
+            listeners.teams = onSnapshot(collection(db, "teams"), snapshot => {
+                teamsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateUI();
+            }, (error) => onDataError('teams', error));
+
+            listeners.players = onSnapshot(collection(db, "players"), snapshot => {
+                playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateUI();
+            }, (error) => onDataError('players', error));
+            
+            listeners.history = onSnapshot(collection(db, "history"), snapshot => {
+                historyData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                 updateUI();
+            }, (error) => onDataError('history', error));
+
+            const tournamentRef = doc(db, "tournaments", "active");
+            listeners.tournament = onSnapshot(tournamentRef, doc => {
+                activeTournament = doc.exists() ? { id: doc.id, ...doc.data() } : null;
+                updateUI();
+            }, (error) => onDataError('active tournament', error));
         }
 
         function updateUI() {
@@ -444,10 +483,11 @@
                 showView('loading');
                 return;
             }
-            renderStandings(); // Changed from renderBracket
             renderTournamentPodium();
             renderDailySchedule();
             renderScoreboardDashboard();
+            renderStandingsTable();
+
 
             if (currentUser && !currentUser.isAnonymous) {
                 showView('main-admin');
@@ -494,63 +534,6 @@
         }
         function handleLogout() { signOut(auth).catch(error => console.error("Logout failed:", error)); }
 
-        // --- NEW: Render Standings Table instead of Bracket ---
-        function renderStandings() {
-            const standingsView = document.getElementById('standings-view');
-            const placeholder = document.getElementById('standings-placeholder');
-            const tournamentNameEl = document.getElementById('tournament-name');
-            const container = document.getElementById('tournament-standings-container');
-
-            if (!activeTournament || activeTournament.status === 'completed' || !activeTournament.standings) {
-                standingsView.innerHTML = '';
-                standingsView.classList.add('hidden');
-                placeholder.classList.remove('hidden');
-                container.classList.remove('hidden');
-                tournamentNameEl.textContent = activeTournament ? activeTournament.name : 'ยังไม่มีการแข่งขัน';
-                return;
-            }
-
-            placeholder.classList.add('hidden');
-            standingsView.classList.remove('hidden');
-            container.classList.remove('hidden');
-            tournamentNameEl.textContent = activeTournament.name;
-
-            const sortedStandings = [...activeTournament.standings].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
-
-            let tableHTML = `
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="text-primary-color uppercase">
-                            <tr>
-                                <th class="p-2">อันดับ</th>
-                                <th class="p-2">ทีม</th>
-                                <th class="p-2 text-center">ชนะ</th>
-                                <th class="p-2 text-center">แพ้</th>
-                                <th class="p-2 text-center">แข่ง</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            sortedStandings.forEach((standing, index) => {
-                const team = getTeamById(standing.teamId);
-                if (team) {
-                    tableHTML += `
-                        <tr class="border-t border-primary-color/20">
-                            <td class="p-2">${index + 1}</td>
-                            <td class="p-2">${team.name}</td>
-                            <td class="p-2 text-center text-green-400">${standing.wins}</td>
-                            <td class="p-2 text-center text-red-500">${standing.losses}</td>
-                            <td class="p-2 text-center">${standing.matchesPlayed}</td>
-                        </tr>
-                    `;
-                }
-            });
-
-            tableHTML += `</tbody></table></div>`;
-            standingsView.innerHTML = tableHTML;
-        }
-        
         function getTeamById(teamId) {
             if (!teamId) return null;
             return teamsData.find(t => t.id === teamId);
@@ -574,6 +557,30 @@
                 matchesPlayed: 0
             }));
 
+            // --- Logic to create initial pairings for the creation date ---
+            let teamsToPair = [...selectedTeamIds];
+            // Shuffle teams for initial random pairing
+            for (let i = teamsToPair.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [teamsToPair[i], teamsToPair[j]] = [teamsToPair[j], teamsToPair[i]];
+            }
+
+            const initialPairs = [];
+            // Create up to 2 initial pairs for the first day
+            while (teamsToPair.length >= 2) {
+                if (initialPairs.length >= 2) break; 
+                const pair = teamsToPair.splice(0, 2);
+                initialPairs.push({ team1Id: pair[0], team2Id: pair[1] });
+            }
+
+            const scheduleDate = new Date();
+            const dateString = toISODateString(scheduleDate);
+            const initialSchedule = [{
+                date: dateString,
+                matches: initialPairs
+            }];
+            // --- End of initial pairing logic ---
+
             const batch = writeBatch(db);
             selectedTeamIds.forEach(id => {
                 const teamRef = doc(db, "teams", id);
@@ -588,7 +595,7 @@
                 status: 'ongoing',
                 teams: selectedTeamIds,
                 standings: standings,
-                schedule: [],
+                schedule: initialSchedule, // Use the newly created schedule
                 rules: "",
                 prizes: { first: "", second: "", third: "" }
             };
@@ -598,7 +605,6 @@
 
             try {
                 await batch.commit();
-                await generateAndSchedulePairings();
                 showAlert('สำเร็จ', 'สร้างทัวร์นาเมนต์และสร้างคู่แข่งขันวันแรกแล้ว');
                 closeModal('manage-tournament-modal');
             } catch (error) {
@@ -610,68 +616,70 @@
         async function handleRecordMatch(e) {
             e.preventDefault();
             const form = e.target;
-            const { date, matchIndex, team1Id, team2Id } = form.dataset;
-            const winnerId = document.getElementById('bracket-winner-team').value;
-            const mvpPlayerId = document.getElementById('bracket-mvp-player').value;
+            const winnerId = document.getElementById('winner-team').value;
+            const mvpPlayerId = document.getElementById('mvp-player').value;
+            const { team1Id, team2Id, date, matchIndex } = form.dataset;
+            const loserId = (winnerId === team1Id) ? team2Id : team1Id;
+
+            const batch = writeBatch(db);
+            const tournamentRef = doc(db, "tournaments", "active");
             
-            // FIX: Add validation for MVP selection to prevent errors.
-            if (!mvpPlayerId) {
-                showAlert('ผิดพลาด', 'กรุณาเลือกผู้เล่น MVP หรือตรวจสอบว่าทีมที่ชนะมีผู้เล่นในรายชื่อ');
-                return;
+            // Update standings
+            const updatedStandings = JSON.parse(JSON.stringify(activeTournament.standings));
+            const winnerStanding = updatedStandings.find(s => s.teamId === winnerId);
+            const loserStanding = updatedStandings.find(s => s.teamId === loserId);
+
+            if (winnerStanding) {
+                winnerStanding.wins = (winnerStanding.wins || 0) + 1;
+                winnerStanding.matchesPlayed = (winnerStanding.matchesPlayed || 0) + 1;
+            }
+            if (loserStanding) {
+                loserStanding.losses = (loserStanding.losses || 0) + 1;
+                loserStanding.matchesPlayed = (loserStanding.matchesPlayed || 0) + 1;
             }
 
-            const loserId = winnerId === team1Id ? team2Id : team1Id;
-
-            const updatedTournament = JSON.parse(JSON.stringify(activeTournament));
-
-            const winnerStanding = updatedTournament.standings.find(s => s.teamId === winnerId);
-            const loserStanding = updatedTournament.standings.find(s => s.teamId === loserId);
-            if (winnerStanding) { winnerStanding.wins++; winnerStanding.matchesPlayed++; }
-            if (loserStanding) { loserStanding.losses++; loserStanding.matchesPlayed++; }
-
-            const daySchedule = updatedTournament.schedule.find(d => d.date === date);
+            // Update schedule with winner
+            const updatedSchedule = JSON.parse(JSON.stringify(activeTournament.schedule));
+            const daySchedule = updatedSchedule.find(d => d.date === date);
             if (daySchedule && daySchedule.matches[matchIndex]) {
                 daySchedule.matches[matchIndex].winner = winnerId;
                 daySchedule.matches[matchIndex].mvp = mvpPlayerId;
             }
 
-            const batch = writeBatch(db);
-            const tournamentRef = doc(db, "tournaments", "active");
-            batch.update(tournamentRef, { 
-                standings: updatedTournament.standings,
-                schedule: updatedTournament.schedule
-            });
+            batch.update(tournamentRef, { standings: updatedStandings, schedule: updatedSchedule });
 
+            // Update MVP count
             const mvpPlayerRef = doc(db, "players", mvpPlayerId);
             const mvpPlayerData = playersData.find(p => p.id === mvpPlayerId);
             batch.update(mvpPlayerRef, { tournamentMvp: (mvpPlayerData.tournamentMvp || 0) + 1 });
             
-            const winnerTeamRef = doc(db, "teams", winnerId);
-            const winnerTeamData = getTeamById(winnerId);
-            batch.update(winnerTeamRef, { wins: (winnerTeamData.wins || 0) + 1 });
-
             try {
                 await batch.commit();
                 showAlert('สำเร็จ', 'บันทึกผลเรียบร้อย');
-                closeModal('record-bracket-match-modal');
+                closeModal('record-match-modal');
             } catch (error) {
                 console.error("Error saving match result:", error);
                 showAlert('ผิดพลาด', 'ไม่สามารถบันทึกผลได้');
             }
         }
         
+        function showFinalizeConfirm() {
+            showConfirm( 'ยืนยันการสรุปผล', 'คุณต้องการสรุปผลทัวร์นาเมนต์นี้ใช่ไหม? การกระทำนี้ไม่สามารถย้อนกลับได้', handleFinalizeTournament );
+        }
+        
         async function handleFinalizeTournament() {
-            if (!activeTournament || !activeTournament.standings || activeTournament.standings.length < 3) {
+             if (!activeTournament || !activeTournament.standings || activeTournament.standings.length < 3) {
                 showAlert('ผิดพลาด', 'มีทีมไม่เพียงพอที่จะสรุปผล (ต้องมีอย่างน้อย 3 ทีม)');
                 return;
             }
 
             const sortedStandings = [...activeTournament.standings].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+            const finalStandings = {
+                first: { teamId: sortedStandings[0].teamId, teamName: getTeamById(sortedStandings[0].teamId).name },
+                second: { teamId: sortedStandings[1].teamId, teamName: getTeamById(sortedStandings[1].teamId).name },
+                third: { teamId: sortedStandings[2].teamId, teamName: getTeamById(sortedStandings[2].teamId).name }
+            };
 
-            const firstPlaceId = sortedStandings[0].teamId;
-            const secondPlaceId = sortedStandings[1].teamId;
-            const thirdPlaceId = sortedStandings[2].teamId;
-            
             const tournamentPlayers = playersData.filter(p => {
                 return teamsData.some(t => activeTournament.teams.includes(t.id) && (t.playerIds || []).includes(p.id));
             });
@@ -682,12 +690,6 @@
                      return ((current.tournamentMvp || 0) > (best.tournamentMvp || 0)) ? current : best;
                  }, { name: 'N/A', tournamentMvp: 0 });
             }
-
-            const finalStandings = {
-                first: { teamId: firstPlaceId, teamName: getTeamById(firstPlaceId).name },
-                second: { teamId: secondPlaceId, teamName: getTeamById(secondPlaceId).name },
-                third: { teamId: thirdPlaceId, teamName: getTeamById(thirdPlaceId).name }
-            };
 
             const batch = writeBatch(db);
             const tournamentRef = doc(db, "tournaments", "active");
@@ -717,9 +719,8 @@
         function renderTournamentPodium() {
             const podiumMain = document.getElementById('tournament-podium-main');
             const summaryLanding = document.getElementById('tournament-summary-landing');
-            const contentContainer = document.getElementById('tournament-standings-container');
+            const mainContentContainer = document.getElementById('main-content-container');
             const scheduleContainer = document.getElementById('daily-schedule-container');
-            const dashboardContainer = document.getElementById('scoreboard-dashboard-container');
             
             let source = null;
             if (activeTournament && activeTournament.status === 'completed') {
@@ -729,12 +730,10 @@
             }
 
             if(source && source.standings) {
-                // FIX: Add checks to ensure first, second, and third place data exists before trying to render.
                 if (!source.standings.first || !source.standings.second || !source.standings.third) {
-                    // This case handles malformed history data or incomplete standings.
                     podiumMain.classList.add('hidden');
                     summaryLanding.classList.add('hidden');
-                    scheduleContainer.classList.remove('hidden'); // Show schedule as a fallback
+                    if (scheduleContainer) scheduleContainer.classList.remove('hidden'); 
                     return;
                 }
                 const mvp = source.tournamentMvp;
@@ -761,12 +760,12 @@
                  summaryLanding.innerHTML = podiumHTML;
                  podiumMain.classList.remove('hidden');
                  summaryLanding.classList.remove('hidden');
-                 contentContainer.classList.add('hidden');
+                 mainContentContainer.classList.add('hidden');
                  scheduleContainer.classList.add('hidden');
-                 dashboardContainer.classList.add('hidden');
             } else {
                  podiumMain.classList.add('hidden');
                  summaryLanding.classList.add('hidden');
+                 mainContentContainer.classList.remove('hidden');
                  scheduleContainer.classList.remove('hidden');
             }
         }
@@ -782,8 +781,8 @@
             const dateHeader = document.getElementById('schedule-date-header');
             const listEl = document.getElementById('daily-schedule-list');
             
-            const dateString = currentScheduleDate.toISOString().split('T')[0];
-            const todayString = new Date().toISOString().split('T')[0];
+            const dateString = toISODateString(currentScheduleDate);
+            const todayString = toISODateString(new Date());
             let displayDateText = currentScheduleDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             if (dateString === todayString) displayDateText = `วันนี้ (${displayDateText})`;
             dateHeader.textContent = displayDateText;
@@ -791,25 +790,28 @@
             const scheduleForDay = (activeTournament.schedule || []).find(s => s.date === dateString);
 
             if (scheduleForDay && scheduleForDay.matches.length > 0) {
-                listEl.innerHTML = scheduleForDay.matches.map((matchInfo, matchIndex) => {
-                    const team1 = getTeamById(matchInfo.team1Id);
-                    const team2 = getTeamById(matchInfo.team2Id);
-                    if (!team1 || !team2) return '';
+                listEl.innerHTML = scheduleForDay.matches.map((match, matchIndex) => {
+                    const team1 = getTeamById(match.team1Id);
+                    const team2 = getTeamById(match.team2Id);
+                    if (!team1 || !team2) return '<!-- Invalid match data -->';
 
-                    let matchContent = '';
-                    if (matchInfo.winner) {
-                        const winnerTeam = getTeamById(matchInfo.winner);
-                        matchContent = `<p class="text-accent-color">ผู้ชนะ: ${winnerTeam.name}</p>`;
+                    let content;
+                    if (match.winner) {
+                        const winnerTeam = getTeamById(match.winner);
+                        content = `<span class="text-accent-color flex-1 text-right">${winnerTeam.name} ชนะ</span>`;
+                    } else if (currentUser && !currentUser.isAnonymous) {
+                        content = `<button data-team1-id="${team1.id}" data-team2-id="${team2.id}" data-date="${scheduleForDay.date}" data-match-index="${matchIndex}" class="cyber-button py-2 px-4">บันทึกผล</button>`;
                     } else {
-                        matchContent = `<span class="flex-1 text-right">${team1.name}</span><span class="mx-4 text-primary-color">VS</span><span class="flex-1 text-left">${team2.name}</span>`;
-                    }
-                    
-                    let recordButton = '';
-                    if (!matchInfo.winner && currentUser && !currentUser.isAnonymous) {
-                        recordButton = `<button data-team1-id="${team1.id}" data-team2-id="${team2.id}" data-date="${scheduleForDay.date}" data-match-index="${matchIndex}" class="cyber-button text-xs py-1 px-2 ml-4">บันทึกผล</button>`;
+                        content = `<span class="mx-4 text-primary-color">VS</span>`;
                     }
 
-                    return `<div class="p-3 bg-black/30 flex items-center justify-center text-lg">${matchContent}${recordButton}</div>`;
+                    return `
+                        <div class="p-3 bg-black/30 flex items-center justify-center text-lg">
+                            <span class="flex-1 text-right">${team1.name}</span>
+                            <div class="mx-4 text-center">${content}</div>
+                            <span class="flex-1 text-left">${team2.name}</span>
+                        </div>
+                    `;
                 }).join('');
 
                 listEl.querySelectorAll('button[data-team1-id]').forEach(btn => {
@@ -831,6 +833,10 @@
                 panel.className = 'cyber-panel p-4 cursor-pointer transform hover:scale-105 transition-transform duration-300 flex flex-col items-center';
                 panel.onclick = () => showTeamModal(team.id);
 
+                const standing = activeTournament ? activeTournament.standings.find(s => s.teamId === team.id) : null;
+                const wins = standing ? standing.wins : 0;
+                const losses = standing ? standing.losses : 0;
+
                 const currentMvpCount = (team.playerIds || []).reduce((sum, playerId) => {
                     const player = playersData.find(p => p.id === playerId);
                     return sum + (player?.tournamentMvp || 0);
@@ -838,20 +844,24 @@
 
                 const trophies = calculateTrophies(team.name);
                 
-                const logoDisplay = team.logoUrl 
-                    ? `<img src="${team.logoUrl}" alt="${team.name} Logo" class="w-24 h-24 object-contain mb-2">`
-                    : `<div class="w-24 h-24 flex items-center justify-center mb-2"><svg class="w-16 h-16 text-primary-color/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></div>`;
+                 const logoDisplay = team.logoUrl 
+                    ? `<img src="${team.logoUrl}" alt="${team.name} Logo" class="w-24 h-24 object-contain mb-2" onerror="this.onerror=null;this.src='https://placehold.co/96x96/0d0d1a/00ffff?text=${team.name.charAt(0)}';">`
+                    : `<div class="w-24 h-24 flex items-center justify-center mb-2">
+                         <svg class="w-16 h-16 text-primary-color/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>`;
 
                 panel.innerHTML = `
                     ${logoDisplay}
-                    <h3 class="text-2xl text-center flex items-center justify-center gap-2"><span>${team.name}</span></h3>
+                    <h3 class="text-2xl text-center flex items-center justify-center gap-2">
+                        <span>${team.name}</span>
+                    </h3>
+                    <p class="text-4xl font-bold text-accent-color mt-2">${wins} <span class="text-primary-color">W</span> - ${losses} <span class="text-primary-color">L</span></p>
                     <div class="flex gap-3 text-lg mt-2">
                         <span class="flex items-center" title="อันดับ 1"><svg class="w-5 h-5 text-gold-color" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 4c-1.06 0-2.05.5-2.69 1.32L16 6h-3V4c0-1.1-.9-2-2-2s-2 .9-2 2v2H6l-.81-.68C4.55 4.5 3.56 4 2.5 4 1.38 0 0 1.12 0 2.5c0 .81.39 1.54 1 2v5c0 1.66 1.34 3 3 3h1v2c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-2h1c1.66 0 3-1.34 3-3v-5c.61-.46 1-1.19 1-2 0-1.38-1.12-2.5-2.5-2.5zM18 16H6c-.55 0-1-.45-1-1v-4h14v4c0 .55-.45 1-1 1z"></path></svg><span class="ml-1">${trophies.gold}</span></span>
                         <span class="flex items-center" title="อันดับ 2"><svg class="w-5 h-5 text-silver-color" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 4c-1.06 0-2.05.5-2.69 1.32L16 6h-3V4c0-1.1-.9-2-2-2s-2 .9-2 2v2H6l-.81-.68C4.55 4.5 3.56 4 2.5 4 1.38 0 0 1.12 0 2.5c0 .81.39 1.54 1 2v5c0 1.66 1.34 3 3 3h1v2c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-2h1c1.66 0 3-1.34 3-3v-5c.61-.46 1-1.19 1-2 0-1.38-1.12-2.5-2.5-2.5zM18 16H6c-.55 0-1-.45-1-1v-4h14v4c0 .55-.45 1-1 1z"></path></svg><span class="ml-1">${trophies.silver}</span></span>
                         <span class="flex items-center" title="อันดับ 3"><svg class="w-5 h-5 text-bronze-color" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 4c-1.06 0-2.05.5-2.69 1.32L16 6h-3V4c0-1.1-.9-2-2-2s-2 .9-2 2v2H6l-.81-.68C4.55 4.5 3.56 4 2.5 4 1.38 0 0 1.12 0 2.5c0 .81.39 1.54 1 2v5c0 1.66 1.34 3 3 3h1v2c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-2h1c1.66 0 3-1.34 3-3v-5c.61-.46 1-1.19 1-2 0-1.38-1.12-2.5-2.5-2.5zM18 16H6c-.55 0-1-.45-1-1v-4h14v4c0 .55-.45 1-1 1z"></path></svg><span class="ml-1">${trophies.bronze}</span></span>
                     </div>
-                    <p class="text-4xl font-bold text-accent-color mt-2">${team.wins || 0}</p>
-                    <p class="text-base text-primary-color">Total MVPs: ${currentMvpCount}</p>
+                    <p class="text-base text-primary-color mt-2">Total MVPs: ${currentMvpCount}</p>
                 `;
                 container.appendChild(panel);
             });
@@ -861,12 +871,42 @@
             const trophies = { gold: 0, silver: 0, bronze: 0 };
             historyData.forEach(record => {
                 if (record.standings) {
-                    if (record.standings.first.teamName === teamName) trophies.gold++;
-                    if (record.standings.second.teamName === teamName) trophies.silver++;
-                    if (record.standings.third.teamName === teamName) trophies.bronze++;
+                    if (record.standings.first?.teamName === teamName) trophies.gold++;
+                    if (record.standings.second?.teamName === teamName) trophies.silver++;
+                    if (record.standings.third?.teamName === teamName) trophies.bronze++;
                 }
             });
             return trophies;
+        }
+
+        function renderStandingsTable() {
+            const placeholder = document.getElementById('standings-placeholder');
+            const table = document.getElementById('standings-table');
+            const tbody = document.getElementById('standings-table-body');
+            
+            if (!activeTournament) {
+                placeholder.classList.remove('hidden');
+                table.classList.add('hidden');
+                return;
+            }
+
+            placeholder.classList.add('hidden');
+            table.classList.remove('hidden');
+
+            const sortedStandings = [...activeTournament.standings].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+
+            tbody.innerHTML = sortedStandings.map((standing, index) => {
+                const team = getTeamById(standing.teamId);
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${team ? team.name : 'Unknown Team'}</td>
+                        <td>${standing.matchesPlayed}</td>
+                        <td>${standing.wins}</td>
+                        <td>${standing.losses}</td>
+                    </tr>
+                `;
+            }).join('');
         }
         
         function setupEventListeners() {
@@ -876,12 +916,15 @@
             document.getElementById('close-login-modal-btn').addEventListener('click', () => closeModal('login-modal'));
             document.getElementById('enter-main-view-btn').addEventListener('click', () => showView('main-guest'));
             document.getElementById('main-title').addEventListener('click', () => { if(!currentUser || currentUser.isAnonymous) showView('landing'); });
+            
             document.getElementById('manage-teams-btn').addEventListener('click', showManageTeamsModal);
             document.getElementById('close-manage-teams-modal-btn').addEventListener('click', () => closeModal('manage-teams-modal'));
             document.getElementById('add-team-form').addEventListener('submit', handleAddTeam);
+            
             document.getElementById('manage-players-btn').addEventListener('click', showManagePlayersModal);
             document.getElementById('close-manage-players-modal-btn').addEventListener('click', () => closeModal('manage-players-modal'));
             document.getElementById('add-player-form').addEventListener('submit', handleAddPlayer);
+            
             document.getElementById('manage-tournament-btn').addEventListener('click', showManageTournamentModal);
             document.getElementById('close-manage-tournament-modal-btn').addEventListener('click', () => closeModal('manage-tournament-modal'));
             document.getElementById('show-create-tournament-form-btn').addEventListener('click', () => {
@@ -894,18 +937,34 @@
                 document.getElementById('create-tournament-form-view').classList.add('hidden');
             });
             document.getElementById('create-tournament-form').addEventListener('submit', handleCreateTournament);
-            document.getElementById('record-bracket-match-form').addEventListener('submit', handleRecordMatch); // Updated handler
-            document.getElementById('close-record-bracket-match-modal-btn').addEventListener('click', () => closeModal('record-bracket-match-modal'));
-            document.getElementById('finalize-tournament-btn').addEventListener('click', () => showConfirm( 'ยืนยันการสรุปผล', 'คุณต้องการสรุปผลทัวร์นาเมนต์นี้ใช่ไหม? การกระทำนี้ไม่สามารถย้อนกลับได้', handleFinalizeTournament ));
+            document.getElementById('record-match-form').addEventListener('submit', handleRecordMatch);
+            document.getElementById('close-record-match-modal-btn').addEventListener('click', () => closeModal('record-match-modal'));
+            document.getElementById('finalize-tournament-btn').addEventListener('click', showFinalizeConfirm);
+            
             document.getElementById('close-team-modal-btn').addEventListener('click', () => closeModal('team-modal'));
             document.getElementById('confirm-cancel-btn').addEventListener('click', () => closeModal('confirm-modal'));
+            
             document.getElementById('show-history-btn-admin').addEventListener('click', showHistoryModal);
             document.getElementById('show-history-btn-guest').addEventListener('click', showHistoryModal);
             document.getElementById('close-history-modal-btn').addEventListener('click', () => closeModal('history-modal'));
+            
             document.getElementById('close-alert-modal-btn').addEventListener('click', () => closeModal('alert-modal'));
-            document.getElementById('prev-day-btn').addEventListener('click', () => { currentScheduleDate.setDate(currentScheduleDate.getDate() - 1); renderDailySchedule(); });
-            document.getElementById('next-day-btn').addEventListener('click', () => { currentScheduleDate.setDate(currentScheduleDate.getDate() + 1); renderDailySchedule(); });
-            document.getElementById('delete-tournament-btn').addEventListener('click', () => { showConfirm('ยืนยัน', `คุณต้องการลบทัวร์นาเมนต์ "${activeTournament.name}" ใช่หรือไม่?`, async () => { await deleteDoc(doc(db, "tournaments", "active")); showAlert('สำเร็จ', 'ลบทัวร์นาเมนต์แล้ว'); closeModal('manage-tournament-modal'); }); });
+            
+            document.getElementById('prev-day-btn').addEventListener('click', () => {
+                currentScheduleDate.setDate(currentScheduleDate.getDate() - 1);
+                renderDailySchedule();
+            });
+            document.getElementById('next-day-btn').addEventListener('click', () => {
+                currentScheduleDate.setDate(currentScheduleDate.getDate() + 1);
+                renderDailySchedule();
+            });
+            document.getElementById('delete-tournament-btn').addEventListener('click', () => {
+                showConfirm('ยืนยัน', `คุณต้องการลบทัวร์นาเมนต์ "${activeTournament.name}" ใช่หรือไม่?`, async () => {
+                    await deleteDoc(doc(db, "tournaments", "active"));
+                    showAlert('สำเร็จ', 'ลบทัวร์นาเมนต์แล้ว');
+                    closeModal('manage-tournament-modal');
+                });
+            });
             document.getElementById('tournament-settings-btn').addEventListener('click', showTournamentSettingsModal);
             document.getElementById('close-settings-modal-btn').addEventListener('click', () => closeModal('tournament-settings-modal'));
             document.getElementById('save-settings-btn').addEventListener('click', handleSaveTournamentSettings);
@@ -913,15 +972,15 @@
             document.getElementById('close-rules-modal-btn').addEventListener('click', () => closeModal('rules-modal'));
             document.getElementById('match-log-btn').addEventListener('click', showMatchLogModal);
             document.getElementById('close-match-log-modal-btn').addEventListener('click', () => closeModal('match-log-modal'));
-            document.getElementById('close-match-details-modal-btn').addEventListener('click', () => closeModal('match-details-modal'));
+            
             document.getElementById('toggle-view-btn-guest').addEventListener('click', toggleMainView);
             document.getElementById('toggle-view-btn-admin').addEventListener('click', toggleMainView);
+            document.getElementById('generate-pairs-btn').addEventListener('click', generateAndSchedulePairings);
             document.getElementById('shuffle-teams-btn').addEventListener('click', handleShuffleTeams);
-            document.getElementById('generate-pairings-btn').addEventListener('click', generateAndSchedulePairings); // New button
         }
 
         function toggleMainView() {
-            const standingsContainer = document.getElementById('tournament-standings-container');
+            const standingsContainer = document.getElementById('standings-view-container');
             const dashboardContainer = document.getElementById('scoreboard-dashboard-container');
             const guestBtn = document.getElementById('toggle-view-btn-guest');
             const adminBtn = document.getElementById('toggle-view-btn-admin');
@@ -936,8 +995,8 @@
             } else {
                 standingsContainer.classList.remove('hidden');
                 dashboardContainer.classList.add('hidden');
-                guestBtn.textContent = 'ดูสกอร์บอร์ด';
-                adminBtn.textContent = 'ดูสกอร์บอร์ด';
+                guestBtn.textContent = 'ดูข้อมูลทีม';
+                adminBtn.textContent = 'ดูข้อมูลทีม';
             }
         }
 
@@ -960,6 +1019,42 @@
 
         // ... (The rest of the helper functions like showManageTeamsModal, showManagePlayersModal, etc. remain largely the same) ...
 
+        async function handleShuffleTeams() {
+            if (activeTournament) {
+                showAlert('ผิดพลาด', 'ไม่สามารถสุ่มทีมได้ในขณะที่มีทัวร์นาเมนต์กำลังแข่งขัน');
+                return;
+            }
+
+            const allTeamsHave5Players = teamsData.every(team => (team.playerIds || []).length >= 5);
+            if (!allTeamsHave5Players) {
+                showAlert('ผู้เล่นไม่ครบ', 'กรุณาตรวจสอบให้แน่ใจว่าทุกทีมมีผู้เล่นตัวจริงครบ 5 คนก่อนทำการสุ่ม');
+                return;
+            }
+            
+            showConfirm('ยืนยันการสุ่มทีม', 'คุณแน่ใจหรือไม่ที่จะสุ่มผู้เล่นตัวจริงทั้งหมดใหม่? การกระทำนี้จะคละผู้เล่น 5 คนแรกของทุกทีม และล้างรายชื่อผู้เล่นสำรองทั้งหมด', async () => {
+                let mainPlayers = teamsData.flatMap(team => (team.playerIds || []).slice(0, 5));
+                
+                for (let i = mainPlayers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [mainPlayers[i], mainPlayers[j]] = [mainPlayers[j], mainPlayers[i]];
+                }
+
+                const batch = writeBatch(db);
+                teamsData.forEach((team, teamIndex) => {
+                    const newMainPlayers = mainPlayers.slice(teamIndex * 5, (teamIndex * 5) + 5);
+                    batch.update(doc(db, "teams", team.id), { playerIds: newMainPlayers });
+                });
+
+                try {
+                    await batch.commit();
+                    showAlert('สำเร็จ', 'สุ่มทีมสำหรับฤดูกาลใหม่เรียบร้อยแล้ว ผู้เล่นสำรองถูกล้างทั้งหมด');
+                } catch (error) {
+                    console.error("Error shuffling teams:", error);
+                    showAlert('ผิดพลาด', 'เกิดข้อผิดพลาดในการสุ่มทีม');
+                }
+            });
+        }
+
         async function generateAndSchedulePairings() {
             if (!activeTournament) return;
 
@@ -967,35 +1062,25 @@
                 .flatMap(day => day.matches.filter(match => !match.winner))
                 .flatMap(match => [match.team1Id, match.team2Id]);
 
-            const availableTeams = activeTournament.standings.filter(team => !upcomingMatchTeamIds.includes(team.teamId));
+            let availableTeams = activeTournament.standings
+                .filter(team => !upcomingMatchTeamIds.includes(team.teamId))
+                .map(t => t.teamId);
 
             if (availableTeams.length < 2) {
                 showAlert('ไม่สามารถสร้างคู่', 'ไม่มีทีมที่พร้อมแข่งขันเพียงพอที่จะสร้างคู่ใหม่');
                 return;
             }
 
-            const teamsByRecord = availableTeams.reduce((acc, team) => {
-                const recordKey = `${team.wins}-${team.losses}`;
-                if (!acc[recordKey]) acc[recordKey] = [];
-                acc[recordKey].push(team.teamId);
-                return acc;
-            }, {});
-            
-            const newPairs = [];
-            const sortedKeys = Object.keys(teamsByRecord).sort((a, b) => (b.split('-')[0] - a.split('-')[0]) || (a.split('-')[1] - b.split('-')[1]));
+            // Shuffle available teams to randomize pairings
+            for (let i = availableTeams.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [availableTeams[i], availableTeams[j]] = [availableTeams[j], availableTeams[i]];
+            }
 
-            for (const key of sortedKeys) {
-                let playersInGroup = teamsByRecord[key];
-                for (let i = playersInGroup.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [playersInGroup[i], playersInGroup[j]] = [playersInGroup[j], playersInGroup[i]];
-                }
-                while (playersInGroup.length >= 2) {
-                    if (newPairs.length >= 2) break;
-                    const pair = playersInGroup.splice(0, 2);
-                    newPairs.push({ team1Id: pair[0], team2Id: pair[1] });
-                }
-                if (newPairs.length >= 2) break;
+            const newPairs = [];
+            while(availableTeams.length >= 2) {
+                const pair = availableTeams.splice(0, 2);
+                newPairs.push({ team1Id: pair[0], team2Id: pair[1] });
             }
 
             if (newPairs.length === 0) {
@@ -1007,25 +1092,29 @@
             let scheduleDate = new Date();
             scheduleDate.setHours(0, 0, 0, 0);
 
+            // Find the next available day to schedule matches
             while (true) {
-                const dateString = scheduleDate.toISOString().split('T')[0];
-                let daySchedule = schedule.find(s => s.date === dateString);
+                let todayString = toISODateString(scheduleDate);
+                let daySchedule = schedule.find(s => s.date === todayString);
                 if (!daySchedule) {
-                    daySchedule = { date: dateString, matches: [] };
+                    daySchedule = { date: todayString, matches: [] };
                     schedule.push(daySchedule);
                 }
+                
                 if (daySchedule.matches.length < 2) {
                     const spaceAvailable = 2 - daySchedule.matches.length;
-                    const pairsToAdd = newPairs.slice(0, spaceAvailable);
+                    const pairsToAdd = newPairs.splice(0, spaceAvailable);
                     pairsToAdd.forEach(pair => daySchedule.matches.push(pair));
-                    break;
                 }
+
+                if (newPairs.length === 0) break;
+
                 scheduleDate.setDate(scheduleDate.getDate() + 1);
             }
             
             try {
                 await updateDoc(doc(db, "tournaments", "active"), { schedule: schedule });
-                showAlert('สำเร็จ', `สร้างคู่แข่งขันใหม่ ${newPairs.length} คู่เรียบร้อย`);
+                showAlert('สำเร็จ', `สร้างคู่แข่งขันใหม่และจัดตารางเรียบร้อย`);
             } catch (error) {
                 console.error("Error scheduling matches:", error);
                 showAlert('ผิดพลาด', 'ไม่สามารถบันทึกตารางแข่งขันได้');
@@ -1035,26 +1124,36 @@
         function showRecordMatchModal(team1Id, team2Id, date, matchIndex) {
             const team1 = getTeamById(team1Id);
             const team2 = getTeamById(team2Id);
-            const modal = document.getElementById('record-bracket-match-modal');
-            const form = document.getElementById('record-bracket-match-form');
-            const winnerSelect = document.getElementById('bracket-winner-team');
-            const mvpSelect = document.getElementById('bracket-mvp-player');
+            
+            const modal = document.getElementById('record-match-modal');
+            const form = document.getElementById('record-match-form');
+            const winnerSelect = document.getElementById('winner-team');
+            const mvpSelect = document.getElementById('mvp-player');
 
-            form.dataset.date = date;
-            form.dataset.matchIndex = matchIndex;
             form.dataset.team1Id = team1Id;
             form.dataset.team2Id = team2Id;
+            form.dataset.date = date;
+            form.dataset.matchIndex = matchIndex;
 
             document.getElementById('match-description').textContent = `${team1.name} VS ${team2.name}`;
             winnerSelect.innerHTML = `<option value="${team1.id}">${team1.name}</option><option value="${team2.id}">${team2.name}</option>`;
             
             const populateMvps = (winnerId) => {
                 const winnerTeam = getTeamById(winnerId);
-                mvpSelect.innerHTML = (winnerTeam.playerIds || [])
+                if (!winnerTeam || !winnerTeam.playerIds || winnerTeam.playerIds.length === 0) {
+                     mvpSelect.innerHTML = '<option value="">-- ไม่มีผู้เล่นในทีม --</option>';
+                     mvpSelect.disabled = true;
+                     form.querySelector('button[type="submit"]').disabled = true;
+                     showAlert('ผู้เล่นไม่ครบ', `ทีม ${winnerTeam.name} ยังไม่มีผู้เล่น กรุณาเพิ่มผู้เล่นก่อนบันทึกผล`);
+                     return;
+                }
+                
+                mvpSelect.innerHTML = (winnerTeam.playerIds)
                     .map(pid => playersData.find(p => p.id === pid))
                     .filter(Boolean)
                     .map(p => `<option value="${p.id}">${p.name}</option>`).join('');
                 mvpSelect.disabled = false;
+                 form.querySelector('button[type="submit"]').disabled = false;
             };
             
             winnerSelect.onchange = (e) => populateMvps(e.target.value);
@@ -1062,31 +1161,34 @@
 
             modal.classList.remove('hidden'); modal.classList.add('flex');
         }
-
-        // --- Functions for Players, Teams, History, Settings, etc. (Mostly unchanged) ---
-        // (The code for showManageTeamsModal, handleAddTeam, handleDeleteTeam, etc. is omitted for brevity but is included in the final file)
         
         function showManageTeamsModal() {
             renderAdminTeamsList();
             const modal = document.getElementById('manage-teams-modal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
+        
         function showManagePlayersModal() {
             renderAdminPlayersList();
             const modal = document.getElementById('manage-players-modal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
+        
         function renderAdminPlayersList() {
             const listEl = document.getElementById('players-list-admin');
             listEl.innerHTML = '';
             playersData.forEach(player => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'flex items-center justify-between p-2 bg-black/20';
-                playerDiv.innerHTML = `<span>${player.name}</span><button data-id="${player.id}" class="text-sm cyber-button danger py-1 px-2">ลบ</button>`;
+                playerDiv.innerHTML = `<span>${player.name}</span>
+                <button data-id="${player.id}" class="text-sm cyber-button danger py-1 px-2">ลบ</button>`;
                 playerDiv.querySelector('button').onclick = () => handleDeletePlayer(player.id);
                 listEl.appendChild(playerDiv);
             });
         }
+        
         async function handleAddPlayer(e) {
             e.preventDefault();
             const nameInput = document.getElementById('new-player-name');
@@ -1099,9 +1201,13 @@
                 nameInput.value = '';
             } catch (error) { console.error("Error adding player: ", error); showAlert('ผิดพลาด', 'ไม่สามารถเพิ่มผู้เล่นได้'); }
         }
+        
         function handleDeletePlayer(playerId) {
             const isPlayerInTeam = teamsData.some(team => team.playerIds?.includes(playerId));
-            if (isPlayerInTeam) { showAlert('ไม่สามารถลบ', 'ผู้เล่นคนนี้ยังอยู่ในทีม กรุณานำออกจากทีมก่อน'); return; }
+            if (isPlayerInTeam) {
+                showAlert('ไม่สามารถลบ', 'ผู้เล่นคนนี้ยังอยู่ในทีม กรุณานำออกจากทีมก่อน');
+                return;
+            }
             const player = playersData.find(p => p.id === playerId);
             showConfirm('ยืนยันการลบ', `คุณแน่ใจหรือไม่ที่จะลบผู้เล่น "${player.name}"?`, async () => {
                  try {
@@ -1110,34 +1216,20 @@
                 } catch (error) { console.error("Error deleting player:", error); showAlert('ผิดพลาด', 'ไม่สามารถลบผู้เล่นได้'); }
             });
         }
-        async function handleShuffleTeams() {
-            if (activeTournament) { showAlert('ผิดพลาด', 'ไม่สามารถสุ่มทีมได้ในขณะที่มีทัวร์นาเมนต์กำลังแข่งขัน'); return; }
-            const allTeamsHave5Players = teamsData.every(team => (team.playerIds || []).slice(0, 5).length === 5);
-            if (!allTeamsHave5Players) { showAlert('ผู้เล่นไม่ครบ', 'กรุณาตรวจสอบให้แน่ใจว่าทุกทีมมีผู้เล่นตัวจริงครบ 5 คนก่อนทำการสุ่ม'); return; }
-            showConfirm('ยืนยันการสุ่มทีม', 'คุณแน่ใจหรือไม่ที่จะสุ่มผู้เล่นตัวจริงทั้งหมดใหม่? การกระทำนี้จะคละผู้เล่น 5 คนแรกของทุกทีม และล้างรายชื่อผู้เล่นสำรองทั้งหมด', async () => {
-                let mainPlayers = teamsData.flatMap(team => (team.playerIds || []).slice(0, 5));
-                for (let i = mainPlayers.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [mainPlayers[i], mainPlayers[j]] = [mainPlayers[j], mainPlayers[i]];
-                }
-                const batch = writeBatch(db);
-                teamsData.forEach((team, teamIndex) => {
-                    const newMainPlayers = mainPlayers.slice(teamIndex * 5, (teamIndex * 5) + 5);
-                    batch.update(doc(db, "teams", team.id), { playerIds: newMainPlayers });
-                });
-                try {
-                    await batch.commit();
-                    showAlert('สำเร็จ', 'สุ่มทีมสำหรับฤดูกาลใหม่เรียบร้อยแล้ว ผู้เล่นสำรองถูกล้างทั้งหมด');
-                } catch (error) {
-                     console.error("Error shuffling teams:", error);
-                    showAlert('ผิดพลาด', 'เกิดข้อผิดพลาดในการสุ่มทีม');
-                }
-            });
-        }
+
         function renderAdminTeamsList() {
             const listEl = document.getElementById('teams-list-admin');
             if (!listEl) return;
-            listEl.innerHTML = teamsData.map(team => `<div class="flex items-center justify-between p-2 bg-black/20"><span class="flex-grow">${team.name}</span><div class="flex gap-2"><button data-action="edit" data-id="${team.id}" class="text-sm cyber-button py-1 px-2">แก้ไข</button><button data-action="delete" data-id="${team.id}" class="text-sm cyber-button danger py-1 px-2">ลบ</button></div></div>`).join('');
+            listEl.innerHTML = teamsData.map(team => `
+                <div class="flex items-center justify-between p-2 bg-black/20">
+                    <span class="flex-grow">${team.name}</span>
+                    <div class="flex gap-2">
+                        <button data-action="edit" data-id="${team.id}" class="text-sm cyber-button py-1 px-2">แก้ไข</button>
+                        <button data-action="delete" data-id="${team.id}" class="text-sm cyber-button danger py-1 px-2">ลบ</button>
+                    </div>
+                </div>
+            `).join('');
+
             listEl.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const action = e.currentTarget.dataset.action;
@@ -1147,6 +1239,7 @@
                 });
             });
         }
+        
         async function handleAddTeam(e) {
             e.preventDefault();
             const nameInput = document.getElementById('new-team-name');
@@ -1162,8 +1255,12 @@
                 logoInput.value = '';
             } catch (error) { console.error("Error adding team: ", error); showAlert('ผิดพลาด', 'ไม่สามารถเพิ่มทีมได้'); }
         }
+
         function handleDeleteTeam(teamId) {
-            if (activeTournament && activeTournament.teams.includes(teamId)) { showAlert('ไม่สามารถลบได้', 'ทีมนี้กำลังอยู่ในการแข่งขันของทัวร์นาเมนต์ปัจจุบัน'); return; }
+            if (activeTournament && activeTournament.teams.includes(teamId)) {
+                showAlert('ไม่สามารถลบได้', 'ทีมนี้กำลังอยู่ในการแข่งขันของทัวร์นาเมนต์ปัจจุบัน');
+                return;
+            }
             const team = getTeamById(teamId);
             showConfirm('ยืนยันการลบ', `คุณแน่ใจหรือไม่ที่จะลบทีม "${team.name}"?`, async () => {
                 try {
@@ -1172,6 +1269,7 @@
                 } catch (error) { console.error("Error deleting team:", error); showAlert('ผิดพลาด', 'ไม่สามารถลบทีมได้'); }
             });
         }
+
         function showTeamModal(teamId) {
             const team = getTeamById(teamId);
             if (!team) return;
@@ -1182,49 +1280,83 @@
             const membersList = document.getElementById('team-members-list');
             const saveBtn = document.getElementById('save-team-btn');
             const form = document.getElementById('team-edit-form');
-            const isAdmin = !!(currentUser && !currentUser.isAnonymous);
+            const isAdmin = currentUser && !currentUser.isAnonymous;
+
             title.textContent = `รายละเอียดทีม: ${team.name}`;
             nameInput.value = team.name;
             logoInput.value = team.logoUrl || '';
-            document.getElementById('team-name-input-container').style.display = isAdmin ? 'block' : 'none';
-            document.getElementById('team-logo-input-container').style.display = isAdmin ? 'block' : 'none';
+            
+            nameInput.disabled = !isAdmin;
+            logoInput.disabled = !isAdmin;
             saveBtn.classList.toggle('hidden', !isAdmin);
+            
             membersList.innerHTML = '';
             const teamPlayerIds = team.playerIds || [];
+
             for(let i=0; i < 7; i++){
-                const playerId = teamPlayerIds[i];
+                const playerId = teamPlayerIds[i]; // This can be undefined
                 const player = playerId ? playersData.find(p => p.id === playerId) : null;
+                
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'flex items-center justify-between';
                 const status = i < 5 ? '(ตัวจริง)' : '(สำรอง)';
+
                 if(isAdmin){
-                    const unassignedPlayers = playersData.filter(p => !teamsData.some(t => t.id !== team.id && (t.playerIds || []).includes(p.id)));
+                    const unassignedPlayers = playersData.filter(p => 
+                        !teamsData.some(t => t.id !== team.id && (t.playerIds || []).includes(p.id))
+                    );
+                    
                     let options = '<option value="">-- ว่าง --</option>';
-                    unassignedPlayers.forEach(p => { options += `<option value="${p.id}" ${player && p.id === player.id ? 'selected' : ''}>${p.name}</option>` });
-                    if (player && !unassignedPlayers.some(p => p.id === player.id)) { options += `<option value="${player.id}" selected>${player.name}</option>`; }
-                    playerDiv.innerHTML = `<select data-player-index="${i}" class="w-full cyber-select">${options}</select><span class="ml-4 text-sm text-gray-400">${status}</span>`;
+                    unassignedPlayers.forEach(p => {
+                         options += `<option value="${p.id}" ${player && p.id === player.id ? 'selected' : ''}>${p.name}</option>`
+                    });
+                    
+                    if (player && !unassignedPlayers.some(p => p.id === player.id)) {
+                        options += `<option value="${player.id}" selected>${player.name}</option>`;
+                    }
+
+                    playerDiv.innerHTML = `
+                        <select data-player-index="${i}" class="w-full cyber-select">
+                           ${options}
+                        </select>
+                        <span class="ml-4 text-sm text-gray-400">${status}</span>
+                    `;
                 } else {
-                     const playerInTeam = playerId ? playersData.find(p => p.id === playerId) : null;
-                     playerDiv.innerHTML = `<span>${playerInTeam ? playerInTeam.name : '- ว่าง -'}</span><div class="ml-4 text-sm whitespace-nowrap"><span class="text-yellow-300">MVP: ${playerInTeam?.tournamentMvp || 0}</span><span class="ml-2 text-gray-500">${status}</span></div>`;
+                      const playerInTeam = playerId ? playersData.find(p => p.id === playerId) : null;
+                      playerDiv.innerHTML = `
+                          <span>${playerInTeam ? playerInTeam.name : '- ว่าง -'}</span>
+                          <div class="ml-4 text-sm whitespace-nowrap">
+                              <span class="text-yellow-300">MVP: ${playerInTeam?.tournamentMvp || 0}</span>
+                              <span class="ml-2 text-gray-500">${status}</span>
+                          </div>
+                      `;
                 }
                 membersList.appendChild(playerDiv);
             }
+
             form.onsubmit = (e) => { e.preventDefault(); handleSaveTeam(teamId); };
             modal.classList.remove('hidden'); modal.classList.add('flex');
         }
+
         async function handleSaveTeam(teamId) {
             const name = document.getElementById('team-name-input').value;
             const logoUrl = document.getElementById('team-logo-input').value;
             const memberSelects = document.querySelectorAll('#team-members-list select');
             const playerIds = Array.from(memberSelects).map(select => select.value);
+
             const uniquePlayerIds = playerIds.filter(id => id);
-            if (new Set(uniquePlayerIds).size !== uniquePlayerIds.length) { showAlert('ผิดพลาด', 'ผู้เล่นหนึ่งคนสามารถอยู่ได้เพียงตำแหน่งเดียวในทีม'); return; }
+            if (new Set(uniquePlayerIds).size !== uniquePlayerIds.length) {
+                showAlert('ผิดพลาด', 'ผู้เล่นหนึ่งคนสามารถอยู่ได้เพียงตำแหน่งเดียวในทีม');
+                return;
+            }
+
             try {
                 await updateDoc(doc(db, "teams", teamId), { name, logoUrl, playerIds });
                 showAlert('สำเร็จ', 'บันทึกข้อมูลทีมเรียบร้อย');
                 closeModal('team-modal');
             } catch (error) { console.error("Error saving team:", error); showAlert('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้'); }
         }
+
         function showHistoryModal() {
              const modal = document.getElementById('history-modal');
             const listEl = document.getElementById('history-list');
@@ -1232,16 +1364,32 @@
             const sortedHistory = [...historyData].sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
             if(sortedHistory.length > 0) {
                 listEl.innerHTML = sortedHistory.map(record => {
-                    if (!record.standings) return `<div class="cyber-panel p-4"><h3 class="text-xl text-red-500 mb-2">ข้อมูลประวัติไม่สมบูรณ์</h3><p>${record.name || 'ไม่มีชื่อทัวร์นาเมนต์'}</p></div>`;
+                    if (!record.standings || !record.standings.first || !record.standings.second || !record.standings.third) {
+                        return `<div class="cyber-panel p-4"><h3 class="text-xl text-red-500 mb-2">ข้อมูลประวัติไม่สมบูรณ์</h3><p>${record.name || 'ไม่มีชื่อทัวร์นาเมนต์'}</p></div>`;
+                    }
                     const mvp = record.tournamentMvp;
-                    return `<div class="cyber-panel p-4"><h3 class="text-xl text-accent-color mb-2">${record.name}</h3><p><strong class="text-gold-color">อันดับ 1:</strong> ${record.standings.first.teamName}</p><p><strong class="text-silver-color">อันดับ 2:</strong> ${record.standings.second.teamName}</p><p><strong class="text-bronze-color">อันดับ 3:</strong> ${record.standings.third.teamName}</p>${mvp && mvp.mvpCount > 0 ? `<p class="mt-2"><strong class="text-secondary-color">MVP:</strong> ${mvp.name} (${mvp.mvpCount} MVPs)</p>` : ''}</div>`;
-                }).join('');
-            } else { listEl.innerHTML = `<p class="text-center text-gray-500">ยังไม่มีประวัติทัวร์นาเมนต์</p>`; }
+                    return `
+                    <div class="cyber-panel p-4">
+                        <h3 class="text-xl text-accent-color mb-2">${record.name}</h3>
+                        <p><strong class="text-gold-color">อันดับ 1:</strong> ${record.standings.first.teamName}</p>
+                        <p><strong class="text-silver-color">อันดับ 2:</strong> ${record.standings.second.teamName}</p>
+                        <p><strong class="text-bronze-color">อันดับ 3:</strong> ${record.standings.third.teamName}</p>
+                        ${mvp && mvp.mvpCount > 0 ? `<p class="mt-2"><strong class="text-secondary-color">MVP:</strong> ${mvp.name} (${mvp.mvpCount} MVPs)</p>` : ''}
+                    </div>
+                `}).join('');
+            } else {
+                 listEl.innerHTML = `<p class="text-center text-gray-500">ยังไม่มีประวัติทัวร์นาเมนต์</p>`;
+            }
              modal.classList.remove('hidden'); modal.classList.add('flex');
         }
         function populateTeamSelectionList() {
             const listEl = document.getElementById('team-selection-list');
-            listEl.innerHTML = teamsData.map(team => `<label class="flex items-center space-x-2 p-2 bg-black/20 hover:bg-primary-color/20 cursor-pointer"><input type="checkbox" value="${team.id}" class="form-checkbox bg-transparent border-primary-color text-primary-color focus:ring-0"><span>${team.name}</span></label>`).join('');
+            listEl.innerHTML = teamsData.map(team => `
+                <label class="flex items-center space-x-2 p-2 bg-black/20 hover:bg-primary-color/20 cursor-pointer">
+                    <input type="checkbox" value="${team.id}" class="form-checkbox bg-transparent border-primary-color text-primary-color focus:ring-0">
+                    <span>${team.name}</span>
+                </label>
+            `).join('');
         }
         function showManageTournamentModal() {
             const createView = document.getElementById('create-tournament-view');
@@ -1260,6 +1408,7 @@
             const modal = document.getElementById('manage-tournament-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
         }
+        
         function showTournamentSettingsModal() {
             if (!activeTournament) return;
             document.getElementById('prize-1st').value = activeTournament.prizes?.first || '';
@@ -1267,10 +1416,16 @@
             document.getElementById('prize-3rd').value = activeTournament.prizes?.third || '';
             document.getElementById('tournament-rules-input').value = activeTournament.rules || '';
             const modal = document.getElementById('tournament-settings-modal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
+
         async function handleSaveTournamentSettings() {
-            const prizes = { first: document.getElementById('prize-1st').value, second: document.getElementById('prize-2nd').value, third: document.getElementById('prize-3rd').value };
+            const prizes = {
+                first: document.getElementById('prize-1st').value,
+                second: document.getElementById('prize-2nd').value,
+                third: document.getElementById('prize-3rd').value
+            };
             const rules = document.getElementById('tournament-rules-input').value;
             try {
                 await updateDoc(doc(db, "tournaments", "active"), { prizes, rules });
@@ -1281,36 +1436,67 @@
                 showAlert('ผิดพลาด', 'ไม่สามารถบันทึกการตั้งค่าได้');
             }
         }
+
         function showRulesModal() {
             const prizePoolEl = document.getElementById('prize-pool-display');
             const rulesEl = document.getElementById('rules-display');
+            
             const source = activeTournament || [...historyData].sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0))[0];
-            if (!source) { showAlert('ไม่มีข้อมูล', 'ยังไม่มีข้อมูลทัวร์นาเมนต์'); return; }
+
+            if (!source) {
+                showAlert('ไม่มีข้อมูล', 'ยังไม่มีข้อมูลทัวร์นาเมนต์');
+                return;
+            }
+
             const prizes = source.prizes || {};
-            prizePoolEl.innerHTML = `<h3 class="text-2xl text-primary-color mb-2">เงินรางวัล</h3><div class="space-y-2"><p><strong class="text-gold-color">อันดับ 1:</strong> ${prizes.first || 'N/A'}</p><p><strong class="text-silver-color">อันดับ 2:</strong> ${prizes.second || 'N/A'}</p><p><strong class="text-bronze-color">อันดับ 3:</strong> ${prizes.third || 'N/A'}</p></div>`;
-            rulesEl.innerHTML = `<h3 class="text-2xl text-primary-color mb-2">กฎกติกา</h3><p>${source.rules || 'ยังไม่มีการตั้งค่ากฎกติกา'}</p>`;
+            prizePoolEl.innerHTML = `
+                <h3 class="text-2xl text-primary-color mb-2">เงินรางวัล</h3>
+                <div class="space-y-2">
+                    <p><strong class="text-gold-color">อันดับ 1:</strong> ${prizes.first || 'N/A'}</p>
+                    <p><strong class="text-silver-color">อันดับ 2:</strong> ${prizes.second || 'N/A'}</p>
+                    <p><strong class="text-bronze-color">อันดับ 3:</strong> ${prizes.third || 'N/A'}</p>
+                </div>
+            `;
+            
+            rulesEl.innerHTML = `
+                <h3 class="text-2xl text-primary-color mb-2">กฎกติกา</h3>
+                <p>${source.rules || 'ยังไม่มีการตั้งค่ากฎกติกา'}</p>
+            `;
+            
             const modal = document.getElementById('rules-modal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
+        
         function showMatchLogModal() {
             if(!activeTournament) return;
             const listEl = document.getElementById('match-log-list');
-            const completedMatches = (activeTournament.schedule || []).flatMap(day => day.matches.filter(m => m.winner));
+            listEl.innerHTML = '';
+            const completedMatches = (activeTournament.schedule || [])
+                .flatMap(day => day.matches.filter(match => match.winner).map(match => ({ ...match, date: day.date })))
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+
             if(completedMatches.length === 0) {
                  listEl.innerHTML = `<p class="text-center text-gray-500">ยังไม่มีผลการแข่งขันที่ถูกบันทึก</p>`;
             } else {
                 listEl.innerHTML = completedMatches.map(m => {
                     const team1 = getTeamById(m.team1Id);
                     const team2 = getTeamById(m.team2Id);
-                    return `<div class="p-2 bg-black/30"><p><strong>${team1.name} vs ${team2.name}</strong></p><p class="text-sm"><strong>Winner:</strong> <span class="text-accent-color">${m.winner === m.team1Id ? team1.name : team2.name}</span> | <strong>MVP:</strong> <span class="text-secondary-color">${playersData.find(p=>p.id === m.mvp)?.name}</span></p></div>`
-                }).join('');
+                    const winner = getTeamById(m.winner);
+                    const mvp = playersData.find(p=>p.id === m.mvp);
+                    return `
+                    <div class="p-2 bg-black/30">
+                        <p class="text-sm text-gray-400">${new Date(m.date).toLocaleDateString('th-TH')}</p>
+                        <p><strong>${team1.name} vs ${team2.name}</strong></p>
+                        <p class="text-sm"><strong>ผู้ชนะ:</strong> <span class="text-accent-color">${winner.name}</span> | <strong>MVP:</strong> <span class="text-secondary-color">${mvp?.name || 'N/A'}</span></p>
+                    </div>
+                `}).join('');
             }
+
             const modal = document.getElementById('match-log-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
         }
-        function showMatchDetailsModal(roundIndex, matchIndex) { // This function is no longer called but kept for now.
-             // It might be useful later if clicking on a match log item should show details.
-        }
+        
     </script>
 
 </body>
