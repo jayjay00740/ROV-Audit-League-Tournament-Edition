@@ -305,7 +305,7 @@
          <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
              <h2 class="text-2xl mb-4">จัดการผู้เล่น</h2>
              <div class="mb-6">
-                 <h3 class="text-xl text-primary-color mb-2">รายชื่อผู้เล่นที่ว่าง</h3>
+                 <h3 class="text-xl text-primary-color mb-2">รายชื่อผู้เล่นทั้งหมด</h3>
                  <div id="players-list-admin" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
              </div>
              <div class="mb-4 pt-4 border-t border-primary-color/30">
@@ -1361,29 +1361,86 @@
             const listEl = document.getElementById('players-list-admin');
             listEl.innerHTML = '';
             
-            const assignedPlayerIds = new Set(teamsData.flatMap(team => team.playerIds || []));
-            let unassignedPlayers = playersData.filter(player => !assignedPlayerIds.has(player.id));
+            let sortedPlayers = [...playersData].sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
 
-            // Sort players by creation date (oldest first). Handle cases where createdAt might not exist.
-            unassignedPlayers.sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
-
-            if (unassignedPlayers.length === 0) {
-                listEl.innerHTML = `<p class="text-center text-gray-500 p-4">ไม่มีผู้เล่นที่ว่างอยู่</p>`;
+            if (sortedPlayers.length === 0) {
+                listEl.innerHTML = `<p class="text-center text-gray-500 p-4">ไม่มีผู้เล่นในระบบ</p>`;
                 return;
             }
 
-            listEl.innerHTML = unassignedPlayers.map((player, index) => {
+            listEl.innerHTML = sortedPlayers.map((player, index) => {
                 return `
-                    <div class="flex items-center justify-between p-2 bg-black/20">
-                        <span class="truncate">${index + 1}. ${player.name}</span>
-                        <button data-id="${player.id}" class="text-sm cyber-button danger py-1 px-2 flex-shrink-0">ลบ</button>
+                    <div class="flex items-center justify-between p-2 bg-black/20" data-player-id="${player.id}">
+                        <div class="flex-grow flex items-center mr-2">
+                            <span class="player-name truncate">${index + 1}. ${player.name}</span>
+                            <input type="text" value="${player.name}" class="cyber-input w-full hidden player-name-input text-sm p-1">
+                        </div>
+                        <div class="flex gap-2 flex-shrink-0">
+                           <button data-action="edit" class="text-sm cyber-button py-1 px-2">แก้ไข</button>
+                           <button data-action="delete" class="text-sm cyber-button danger py-1 px-2">ลบ</button>
+                        </div>
                     </div>
                 `;
             }).join('');
 
-            listEl.querySelectorAll('button[data-id]').forEach(btn => {
-                btn.addEventListener('click', () => handleDeletePlayer(btn.dataset.id));
+            listEl.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const action = e.currentTarget.dataset.action;
+                    const playerDiv = e.currentTarget.closest('[data-player-id]');
+                    
+                    if (action === 'delete') {
+                        handleDeletePlayer(playerDiv.dataset.playerId);
+                    } else if (action === 'edit' || action === 'save') {
+                        togglePlayerEdit(playerDiv);
+                    }
+                });
             });
+        }
+
+        function togglePlayerEdit(playerDiv) {
+            const nameSpan = playerDiv.querySelector('.player-name');
+            const nameInput = playerDiv.querySelector('.player-name-input');
+            const editBtn = playerDiv.querySelector('button[data-action="edit"], button[data-action="save"]');
+
+            if (editBtn.dataset.action === 'edit') {
+                // Switch to edit mode
+                nameSpan.classList.add('hidden');
+                nameInput.classList.remove('hidden');
+                nameInput.focus();
+                editBtn.textContent = 'บันทึก';
+                editBtn.dataset.action = 'save';
+            } else {
+                // Attempt to save
+                const newName = nameInput.value.trim();
+                const playerId = playerDiv.dataset.playerId;
+                const oldNameText = nameSpan.textContent;
+                const oldName = oldNameText.substring(oldNameText.indexOf('.') + 2);
+
+                if (newName && newName !== oldName) {
+                    handleEditPlayerName(playerId, newName);
+                }
+                
+                // Always switch back to view mode after clicking save
+                nameSpan.classList.remove('hidden');
+                nameInput.classList.add('hidden');
+                editBtn.textContent = 'แก้ไข';
+                editBtn.dataset.action = 'edit';
+            }
+        }
+
+        async function handleEditPlayerName(playerId, newName) {
+            if (!newName) {
+                showAlert('ผิดพลาด', 'ชื่อผู้เล่นห้ามว่าง');
+                return;
+            }
+            const playerRef = doc(db, "players", playerId);
+            try {
+                await updateDoc(playerRef, { name: newName });
+                showAlert('สำเร็จ', 'เปลี่ยนชื่อผู้เล่นเรียบร้อยแล้ว');
+            } catch (error) {
+                console.error("Error updating player name:", error);
+                showAlert('ผิดพลาด', 'ไม่สามารถเปลี่ยนชื่อผู้เล่นได้');
+            }
         }
         
         async function handleAddPlayer(e) {
