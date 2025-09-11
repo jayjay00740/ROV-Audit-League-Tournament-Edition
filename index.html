@@ -291,6 +291,7 @@
                  </div>
                  <div class="mt-6 flex justify-end space-x-4">
                      <button type="submit" class="cyber-button">บันทึก</button>
+                     <button type="button" id="record-draw-btn" class="cyber-button secondary">บันทึกเป็นเสมอ</button>
                      <button type="button" id="close-record-match-modal-btn" class="cyber-button secondary">ยกเลิก</button>
                  </div>
              </form>
@@ -338,26 +339,39 @@
          </div>
      </div>
      <div id="team-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-         <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
-             <h2 id="team-modal-title" class="text-2xl mb-4"></h2>
-             <form id="team-edit-form">
-                 <div id="team-name-input-container" class="mb-2">
-                     <label class="block text-primary-color mb-1">ชื่อทีม</label>
-                     <input id="team-name-input" type="text" class="w-full cyber-input" disabled>
-                 </div>
-                  <div id="team-logo-input-container" class="mb-4">
-                     <label class="block text-primary-color mb-1">URL โลโก้</label>
-                     <input id="team-logo-input" type="url" class="w-full cyber-input" disabled>
-                 </div>
-                 <h3 class="text-xl text-primary-color mb-2">สมาชิกในทีม</h3>
-                 <div id="team-members-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
-                 <div class="mt-6 flex justify-end space-x-4">
-                     <button type="submit" id="save-team-btn" class="cyber-button hidden">Save Changes</button>
-                     <button type="button" id="close-team-modal-btn" class="cyber-button secondary">Close</button>
-                 </div>
-             </form>
-         </div>
-     </div>
+        <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
+            <h2 id="team-modal-title" class="text-2xl mb-4"></h2>
+            <form id="team-edit-form">
+                <div class="flex items-start mb-4 gap-4">
+                    <div id="team-logo-display" class="w-24 h-24 flex-shrink-0 bg-black/20 flex items-center justify-center rounded-md">
+                        <!-- Logo img will be injected here -->
+                    </div>
+                    <div class="flex-grow">
+                        <!-- For Guests -->
+                        <div id="team-name-display-container" class="mb-2">
+                            <label class="block text-primary-color mb-1">ชื่อทีม</label>
+                            <p id="team-name-display" class="text-xl text-white p-2 rounded-md bg-black/20"></p>
+                        </div>
+                        <!-- For Admins -->
+                        <div id="team-name-input-container" class="mb-2 hidden">
+                            <label class="block text-primary-color mb-1">ชื่อทีม</label>
+                            <input id="team-name-input" type="text" class="w-full cyber-input">
+                        </div>
+                        <div id="team-logo-input-container" class="mb-4 hidden">
+                            <label class="block text-primary-color mb-1">URL โลโก้</label>
+                            <input id="team-logo-input" type="url" class="w-full cyber-input">
+                        </div>
+                    </div>
+                </div>
+                <h3 class="text-xl text-primary-color mb-2">สมาชิกในทีม</h3>
+                <div id="team-members-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                <div class="mt-6 flex justify-end space-x-4">
+                    <button type="submit" id="save-team-btn" class="cyber-button hidden">Save Changes</button>
+                    <button type="button" id="close-team-modal-btn" class="cyber-button secondary">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
      <div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
          <div class="cyber-panel p-6 w-11/12 max-w-2xl relative max-h-[90vh] flex flex-col">
              <h2 class="text-3xl mb-4 text-center text-accent-color">ประวัติทัวร์นาเมนต์</h2>
@@ -814,6 +828,8 @@
                     if (match.winner) {
                         const winnerTeam = getTeamById(match.winner);
                         content = `<span class="text-accent-color flex-1 text-right">${winnerTeam.name} ชนะ</span>`;
+                    } else if (match.isDraw) {
+                        content = `<span class="text-gray-400">เสมอ</span>`;
                     } else if (currentUser && !currentUser.isAnonymous) {
                         content = `<button data-team1-id="${team1.id}" data-team2-id="${team2.id}" data-date="${scheduleForDay.date}" data-match-index="${matchIndex}" class="cyber-button py-2 px-4">บันทึกผล</button>`;
                     } else {
@@ -936,7 +952,7 @@
             container.classList.remove('hidden');
 
             const upcomingMatches = (activeTournament.schedule || [])
-                .flatMap(day => day.matches.filter(match => !match.winner).map(match => ({ ...match, date: day.date })))
+                .flatMap(day => day.matches.filter(match => !match.winner && !match.isDraw).map(match => ({ ...match, date: day.date })))
                 .sort((a, b) => new Date(a.date) - new Date(b.date));
 
             if (upcomingMatches.length === 0) {
@@ -1011,6 +1027,7 @@
             document.getElementById('create-tournament-form').addEventListener('submit', handleCreateTournament);
             document.getElementById('record-match-form').addEventListener('submit', handleRecordMatch);
             document.getElementById('close-record-match-modal-btn').addEventListener('click', () => closeModal('record-match-modal'));
+            // Note: The draw button listener is added dynamically in showRecordMatchModal
             document.getElementById('finalize-tournament-btn').addEventListener('click', showFinalizeConfirm);
             
             document.getElementById('close-team-modal-btn').addEventListener('click', () => closeModal('team-modal'));
@@ -1131,7 +1148,7 @@
             if (!activeTournament) return;
 
             const upcomingMatchTeamIds = (activeTournament.schedule || [])
-                .flatMap(day => day.matches.filter(match => !match.winner))
+                .flatMap(day => day.matches.filter(match => !match.winner && !match.isDraw)) // FIX: Also exclude drawn matches
                 .flatMap(match => [match.team1Id, match.team2Id]);
 
             let availableTeams = activeTournament.standings
@@ -1193,6 +1210,43 @@
             }
         }
         
+        async function handleRecordDraw(team1Id, team2Id, date, matchIndex) {
+            const batch = writeBatch(db);
+            const tournamentRef = doc(db, "tournaments", "active");
+
+            // Update standings: Increment matchesPlayed for both teams but no wins/losses
+            const updatedStandings = JSON.parse(JSON.stringify(activeTournament.standings));
+            const team1Standing = updatedStandings.find(s => s.teamId === team1Id);
+            const team2Standing = updatedStandings.find(s => s.teamId === team2Id);
+
+            if (team1Standing) {
+                team1Standing.matchesPlayed = (team1Standing.matchesPlayed || 0) + 1;
+            }
+            if (team2Standing) {
+                team2Standing.matchesPlayed = (team2Standing.matchesPlayed || 0) + 1;
+            }
+
+            // Update schedule with draw status
+            const updatedSchedule = JSON.parse(JSON.stringify(activeTournament.schedule));
+            const daySchedule = updatedSchedule.find(d => d.date === date);
+            if (daySchedule && daySchedule.matches[matchIndex]) {
+                daySchedule.matches[matchIndex].isDraw = true;
+                delete daySchedule.matches[matchIndex].winner; // Ensure no winner is set
+                delete daySchedule.matches[matchIndex].mvp;
+            }
+
+            batch.update(tournamentRef, { standings: updatedStandings, schedule: updatedSchedule });
+            
+            try {
+                await batch.commit();
+                showAlert('สำเร็จ', 'บันทึกผลเสมอเรียบร้อย');
+                closeModal('record-match-modal');
+            } catch (error) {
+                console.error("Error saving match draw:", error);
+                showAlert('ผิดพลาด', 'ไม่สามารถบันทึกผลเสมอได้');
+            }
+        }
+
         function showRecordMatchModal(team1Id, team2Id, date, matchIndex) {
             const team1 = getTeamById(team1Id);
             const team2 = getTeamById(team2Id);
@@ -1201,11 +1255,14 @@
             const form = document.getElementById('record-match-form');
             const winnerSelect = document.getElementById('winner-team');
             const mvpSelect = document.getElementById('mvp-player');
+            const drawBtn = document.getElementById('record-draw-btn');
 
             form.dataset.team1Id = team1Id;
             form.dataset.team2Id = team2Id;
             form.dataset.date = date;
             form.dataset.matchIndex = matchIndex;
+            
+            drawBtn.onclick = () => handleRecordDraw(team1Id, team2Id, date, parseInt(matchIndex));
 
             document.getElementById('match-description').textContent = `${team1.name} VS ${team2.name}`;
             winnerSelect.innerHTML = `<option value="${team1.id}">${team1.name}</option><option value="${team2.id}">${team2.name}</option>`;
@@ -1347,19 +1404,39 @@
             if (!team) return;
             const modal = document.getElementById('team-modal');
             const title = document.getElementById('team-modal-title');
+            
             const nameInput = document.getElementById('team-name-input');
+            const nameInputContainer = document.getElementById('team-name-input-container');
+            const nameDisplay = document.getElementById('team-name-display');
+            const nameDisplayContainer = document.getElementById('team-name-display-container');
+
             const logoInput = document.getElementById('team-logo-input');
+            const logoDisplay = document.getElementById('team-logo-display');
+            const logoInputContainer = document.getElementById('team-logo-input-container');
+            
             const membersList = document.getElementById('team-members-list');
             const saveBtn = document.getElementById('save-team-btn');
             const form = document.getElementById('team-edit-form');
             const isAdmin = currentUser && !currentUser.isAnonymous;
 
             title.textContent = `รายละเอียดทีม: ${team.name}`;
-            nameInput.value = team.name;
-            logoInput.value = team.logoUrl || '';
             
-            nameInput.disabled = !isAdmin;
-            logoInput.disabled = !isAdmin;
+            // Populate data for both display and input fields
+            nameInput.value = team.name;
+            nameDisplay.textContent = team.name;
+            logoInput.value = team.logoUrl || '';
+
+            // Render logo
+            if (team.logoUrl) {
+                logoDisplay.innerHTML = `<img src="${team.logoUrl}" alt="${team.name} Logo" class="w-full h-full object-contain" onerror="this.onerror=null;this.parentElement.innerHTML = '<svg class=\'w-16 h-16 text-primary-color/50\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z\'></path></svg>';">`;
+            } else {
+                logoDisplay.innerHTML = `<svg class="w-16 h-16 text-primary-color/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
+            }
+            
+            // Toggle visibility and disabled state based on admin status
+            nameInputContainer.classList.toggle('hidden', !isAdmin);
+            nameDisplayContainer.classList.toggle('hidden', isAdmin);
+            logoInputContainer.classList.toggle('hidden', !isAdmin);
             saveBtn.classList.toggle('hidden', !isAdmin);
             
             membersList.innerHTML = '';
@@ -1545,7 +1622,7 @@
             const listEl = document.getElementById('match-log-list');
             listEl.innerHTML = '';
             const completedMatches = (activeTournament.schedule || [])
-                .flatMap(day => day.matches.filter(match => match.winner).map(match => ({ ...match, date: day.date })))
+                .flatMap(day => day.matches.filter(match => match.winner || match.isDraw).map(match => ({ ...match, date: day.date })))
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
 
             if(completedMatches.length === 0) {
@@ -1554,13 +1631,21 @@
                 listEl.innerHTML = completedMatches.map(m => {
                     const team1 = getTeamById(m.team1Id);
                     const team2 = getTeamById(m.team2Id);
-                    const winner = getTeamById(m.winner);
-                    const mvp = playersData.find(p=>p.id === m.mvp);
+                    
+                    let resultText;
+                    if (m.isDraw) {
+                        resultText = `<strong>ผล:</strong> <span class="text-gray-400">เสมอ</span>`;
+                    } else {
+                        const winner = getTeamById(m.winner);
+                        const mvp = playersData.find(p=>p.id === m.mvp);
+                        resultText = `<strong>ผู้ชนะ:</strong> <span class="text-accent-color">${winner.name}</span> | <strong>MVP:</strong> <span class="text-secondary-color">${mvp?.name || 'N/A'}</span>`;
+                    }
+
                     return `
                     <div class="p-2 bg-black/30">
-                        <p class="text-sm text-gray-400">${new Date(m.date).toLocaleDateString('th-TH')}</p>
+                        <p class="text-sm text-gray-400">${new Date(m.date + 'T00:00:00').toLocaleDateString('th-TH')}</p>
                         <p><strong>${team1.name} vs ${team2.name}</strong></p>
-                        <p class="text-sm"><strong>ผู้ชนะ:</strong> <span class="text-accent-color">${winner.name}</span> | <strong>MVP:</strong> <span class="text-secondary-color">${mvp?.name || 'N/A'}</span></p>
+                        <p class="text-sm">${resultText}</p>
                     </div>
                 `}).join('');
             }
@@ -1573,6 +1658,5 @@
 
 </body>
 </html>
-"
 
 
