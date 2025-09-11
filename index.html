@@ -121,20 +121,22 @@
                              <p>ยังไม่มีทัวร์นาเมนต์ที่กำลังแข่งขัน</p>
                              <p class="text-sm mt-2">(ผู้ดูแลสามารถสร้างได้จากเมนู)</p>
                          </div>
-                        <table id="standings-table" class="standings-table hidden">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Team</th>
-                                    <th>Played</th>
-                                    <th>Wins</th>
-                                    <th>Losses</th>
-                                </tr>
-                            </thead>
-                            <tbody id="standings-table-body">
-                                <!-- Standings rows will be injected here -->
-                            </tbody>
-                        </table>
+                         <div class="overflow-x-auto">
+                            <table id="standings-table" class="standings-table hidden w-full">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Team</th>
+                                        <th>Played</th>
+                                        <th>Wins</th>
+                                        <th>Losses</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="standings-table-body">
+                                    <!-- Standings rows will be injected here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <!-- Scoreboard View -->
                     <div id="scoreboard-dashboard-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -849,9 +851,9 @@
 
                     return `
                         <div class="p-3 bg-black/30 flex items-center justify-center text-lg">
-                            <span class="flex-1 text-right">${team1.name}</span>
+                            <span class="flex-1 text-right break-words">${team1.name}</span>
                             <div class="mx-4 text-center">${content}</div>
-                            <span class="flex-1 text-left">${team2.name}</span>
+                            <span class="flex-1 text-left break-words">${team2.name}</span>
                         </div>
                     `;
                 }).join('');
@@ -897,7 +899,7 @@
                     <h3 class="text-2xl text-center flex items-center justify-center gap-2">
                         <span>${team.name}</span>
                     </h3>
-                    <p class="text-4xl font-bold text-accent-color mt-2">${wins} <span class="text-primary-color">W</span> - ${losses} <span class="text-primary-color">L</span></p>
+                    <p class="text-3xl sm:text-4xl font-bold text-accent-color mt-2">${wins} <span class="text-primary-color">W</span> - ${losses} <span class="text-primary-color">L</span></p>
                     <div class="flex gap-3 text-lg mt-2">
                         <span class="flex items-center" title="อันดับ 1"><svg class="w-5 h-5 text-gold-color" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 4c-1.06 0-2.05.5-2.69 1.32L16 6h-3V4c0-1.1-.9-2-2-2s-2 .9-2 2v2H6l-.81-.68C4.55 4.5 3.56 4 2.5 4 1.38 0 0 1.12 0 2.5c0 .81.39 1.54 1 2v5c0 1.66 1.34 3 3 3h1v2c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-2h1c1.66 0 3-1.34 3-3v-5c.61-.46 1-1.19 1-2 0-1.38-1.12-2.5-2.5-2.5zM18 16H6c-.55 0-1-.45-1-1v-4h14v4c0 .55-.45 1-1 1z"></path></svg><span class="ml-1">${trophies.gold}</span></span>
                         <span class="flex items-center" title="อันดับ 2"><svg class="w-5 h-5 text-silver-color" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 4c-1.06 0-2.05.5-2.69 1.32L16 6h-3V4c0-1.1-.9-2-2-2s-2 .9-2 2v2H6l-.81-.68C4.55 4.5 3.56 4 2.5 4 1.38 0 0 1.12 0 2.5c0 .81.39 1.54 1 2v5c0 1.66 1.34 3 3 3h1v2c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-2h1c1.66 0 3-1.34 3-3v-5c.61-.46 1-1.19 1-2 0-1.38-1.12-2.5-2.5-2.5zM18 16H6c-.55 0-1-.45-1-1v-4h14v4c0 .55-.45 1-1 1z"></path></svg><span class="ml-1">${trophies.silver}</span></span>
@@ -986,18 +988,18 @@
                     const matchDate = new Date(match.date + 'T00:00:00').toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' });
 
                     return `
-                        <div class="flex justify-around items-center text-center">
-                            <div class="flex flex-col items-center w-1/3">
+                        <div class="flex flex-col md:flex-row justify-around items-center text-center gap-4">
+                            <div class="flex flex-col items-center w-full md:w-1/3">
                                 ${logo1}
-                                <h4 class="text-xl md:text-2xl mt-2">${team1.name}</h4>
+                                <h4 class="text-xl md:text-2xl mt-2 break-words">${team1.name}</h4>
                             </div>
-                            <div class="text-center w-1/3">
+                            <div class="text-center w-full md:w-1/3 my-4 md:my-0">
                                 <p class="text-3xl md:text-4xl text-primary-color">VS</p>
                                 <p class="text-accent-color mt-2 text-sm md:text-base">${matchDate}</p>
                             </div>
-                            <div class="flex flex-col items-center w-1/3">
+                            <div class="flex flex-col items-center w-full md:w-1/3">
                                 ${logo2}
-                                <h4 class="text-xl md:text-2xl mt-2">${team2.name}</h4>
+                                <h4 class="text-xl md:text-2xl mt-2 break-words">${team2.name}</h4>
                             </div>
                         </div>
                     `;
@@ -1709,4 +1711,5 @@
 
 </body>
 </html>
+
 
