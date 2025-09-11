@@ -1362,20 +1362,27 @@
             listEl.innerHTML = '';
             
             const assignedPlayerIds = new Set(teamsData.flatMap(team => team.playerIds || []));
-            const unassignedPlayers = playersData.filter(player => !assignedPlayerIds.has(player.id));
+            let unassignedPlayers = playersData.filter(player => !assignedPlayerIds.has(player.id));
+
+            // Sort players by creation date (oldest first). Handle cases where createdAt might not exist.
+            unassignedPlayers.sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
 
             if (unassignedPlayers.length === 0) {
                 listEl.innerHTML = `<p class="text-center text-gray-500 p-4">ไม่มีผู้เล่นที่ว่างอยู่</p>`;
                 return;
             }
 
-            unassignedPlayers.forEach(player => {
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'flex items-center justify-between p-2 bg-black/20';
-                playerDiv.innerHTML = `<span>${player.name}</span>
-                <button data-id="${player.id}" class="text-sm cyber-button danger py-1 px-2">ลบ</button>`;
-                playerDiv.querySelector('button').onclick = () => handleDeletePlayer(player.id);
-                listEl.appendChild(playerDiv);
+            listEl.innerHTML = unassignedPlayers.map((player, index) => {
+                return `
+                    <div class="flex items-center justify-between p-2 bg-black/20">
+                        <span class="truncate">${index + 1}. ${player.name}</span>
+                        <button data-id="${player.id}" class="text-sm cyber-button danger py-1 px-2 flex-shrink-0">ลบ</button>
+                    </div>
+                `;
+            }).join('');
+
+            listEl.querySelectorAll('button[data-id]').forEach(btn => {
+                btn.addEventListener('click', () => handleDeletePlayer(btn.dataset.id));
             });
         }
         
@@ -1384,7 +1391,7 @@
             const nameInput = document.getElementById('new-player-name');
             const name = nameInput.value.trim();
             if (!name) return;
-            const newPlayerData = { name, tournamentMvp: 0, totalMvp: 0 };
+            const newPlayerData = { name, tournamentMvp: 0, totalMvp: 0, createdAt: new Date() };
              try {
                 await addDoc(collection(db, "players"), newPlayerData);
                 showAlert('สำเร็จ', `เพิ่มผู้เล่น "${name}" เรียบร้อย`);
