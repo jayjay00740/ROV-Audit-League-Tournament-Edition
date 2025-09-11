@@ -189,6 +189,7 @@
                  <div class="flex flex-wrap gap-4">
                      <button id="show-create-tournament-form-btn" class="cyber-button secondary">สร้างทัวร์นาเมนต์ใหม่</button>
                      <button id="shuffle-teams-btn" class="cyber-button">สุ่มทีมสำหรับฤดูกาลหน้า</button>
+                     <button id="clear-history-btn" class="cyber-button danger">ล้างข้อมูลประวัติ</button>
                  </div>
              </div>
              <div id="active-tournament-view" class="hidden">
@@ -1066,6 +1067,7 @@
             document.getElementById('toggle-view-btn-admin').addEventListener('click', toggleMainView);
             document.getElementById('generate-pairs-btn').addEventListener('click', generateAndSchedulePairings);
             document.getElementById('shuffle-teams-btn').addEventListener('click', handleShuffleTeams);
+            document.getElementById('clear-history-btn').addEventListener('click', handleClearHistory);
         }
 
         function toggleMainView() {
@@ -1245,6 +1247,34 @@
                 console.error("Error saving match draw:", error);
                 showAlert('ผิดพลาด', 'ไม่สามารถบันทึกผลเสมอได้');
             }
+        }
+
+        async function handleClearHistory() {
+            showConfirm(
+                'ยืนยันการล้างประวัติ', 
+                'คุณแน่ใจหรือไม่ที่จะลบประวัติทัวร์นาเมนต์ทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้', 
+                async () => {
+                    const historyCollectionRef = collection(db, "history");
+                    try {
+                        const querySnapshot = await getDocs(historyCollectionRef);
+                        if (querySnapshot.empty) {
+                            showAlert('ไม่มีข้อมูล', 'ไม่มีประวัติที่จะลบ');
+                            return;
+                        }
+                        
+                        const batch = writeBatch(db);
+                        querySnapshot.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+                        
+                        await batch.commit();
+                        showAlert('สำเร็จ', 'ลบประวัติทัวร์นาเมนต์ทั้งหมดเรียบร้อยแล้ว');
+                    } catch (error) {
+                        console.error("Error clearing history:", error);
+                        showAlert('ผิดพลาด', 'ไม่สามารถล้างประวัติได้');
+                    }
+                }
+            );
         }
 
         function showRecordMatchModal(team1Id, team2Id, date, matchIndex) {
@@ -1658,5 +1688,5 @@
 
 </body>
 </html>
-
+"
 
