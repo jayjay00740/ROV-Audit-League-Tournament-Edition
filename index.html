@@ -719,6 +719,16 @@
             }
 
             const batch = writeBatch(db);
+
+            // Update totalMvp for all participating players
+            tournamentPlayers.forEach(player => {
+                if (player.tournamentMvp && player.tournamentMvp > 0) {
+                    const playerRef = doc(db, "players", player.id);
+                    const newTotalMvp = (player.totalMvp || 0) + player.tournamentMvp;
+                    batch.update(playerRef, { totalMvp: newTotalMvp });
+                }
+            });
+
             const tournamentRef = doc(db, "tournaments", "active");
             batch.update(tournamentRef, { status: 'completed', finalStandings, tournamentMvp });
             
@@ -1374,7 +1384,7 @@
         function handleDeletePlayer(playerId) {
             const isPlayerInTeam = teamsData.some(team => team.playerIds?.includes(playerId));
             if (isPlayerInTeam) {
-                showAlert('ไม่สามารถลบ', 'ผู้เล่นคนนี้ยังอยู่ในทีม กรุณานำออกจากทีมก่อน');
+                showAlert('ไม่สามารถลบ', 'ผู้เล่นคนนี้ยังอยู่ในทีม กรุณาเพิ่มผู้เล่นก่อน');
                 return;
             }
             const player = playersData.find(p => p.id === playerId);
@@ -1516,6 +1526,7 @@
                           <span>${playerInTeam ? playerInTeam.name : '- ว่าง -'}</span>
                           <div class="ml-4 text-sm whitespace-nowrap">
                               <span class="text-yellow-300">MVP: ${playerInTeam?.tournamentMvp || 0}</span>
+                              <span class="text-primary-color/70 ml-2">(รวม: ${playerInTeam?.totalMvp || 0})</span>
                               <span class="ml-2 text-gray-500">${status}</span>
                           </div>
                       `;
@@ -1698,5 +1709,4 @@
 
 </body>
 </html>
-"
 
