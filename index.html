@@ -305,7 +305,7 @@
          <div class="cyber-panel p-6 w-11/12 max-w-lg relative">
              <h2 class="text-2xl mb-4">จัดการผู้เล่น</h2>
              <div class="mb-6">
-                 <h3 class="text-xl text-primary-color mb-2">รายชื่อผู้เล่นทั้งหมด</h3>
+                 <h3 class="text-xl text-primary-color mb-2">รายชื่อผู้เล่นที่ว่าง</h3>
                  <div id="players-list-admin" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
              </div>
              <div class="mb-4 pt-4 border-t border-primary-color/30">
@@ -1360,7 +1360,16 @@
         function renderAdminPlayersList() {
             const listEl = document.getElementById('players-list-admin');
             listEl.innerHTML = '';
-            playersData.forEach(player => {
+            
+            const assignedPlayerIds = new Set(teamsData.flatMap(team => team.playerIds || []));
+            const unassignedPlayers = playersData.filter(player => !assignedPlayerIds.has(player.id));
+
+            if (unassignedPlayers.length === 0) {
+                listEl.innerHTML = `<p class="text-center text-gray-500 p-4">ไม่มีผู้เล่นที่ว่างอยู่</p>`;
+                return;
+            }
+
+            unassignedPlayers.forEach(player => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'flex items-center justify-between p-2 bg-black/20';
                 playerDiv.innerHTML = `<span>${player.name}</span>
@@ -1711,5 +1720,4 @@
 
 </body>
 </html>
-
 
