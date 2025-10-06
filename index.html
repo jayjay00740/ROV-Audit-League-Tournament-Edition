@@ -2,8 +2,17 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ROV Audit League - Tournament Edition</title>
+    
+    <!-- PWA & Mobile App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ROV Audit League">
+    <meta name="theme-color" content="#0d0d1a">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +38,7 @@
                 linear-gradient(var(--border-color) 1px, transparent 1px),
                 linear-gradient(to right, var(--border-color) 1px, var(--bg-color) 1px);
             background-size: 20px 20px;
+            overscroll-behavior: none;
         }
 
         h1, h2, h3 { font-family: 'Orbitron', sans-serif; text-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color); }
@@ -62,11 +72,35 @@
         ::-webkit-scrollbar-track { background: var(--bg-color); }
         ::-webkit-scrollbar-thumb { background: var(--primary-color); }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+
+        /* Touch Control CSS */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            -khtml-user-select: none; 
+            -moz-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+        }
+        input, textarea, .cyber-input, .cyber-select, .cyber-textarea {
+             -webkit-user-select: auto !important;
+             -khtml-user-select: auto !important;
+             -moz-user-select: auto !important;
+             -ms-user-select: auto !important;
+             user-select: auto !important;
+        }
     </style>
 </head>
-<body class="min-h-screen w-full p-4 md:p-8 flex items-center justify-center">
+<body class="min-h-dvh w-full p-4 md:p-8 flex items-center justify-center">
+    
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 bg-bg-color flex flex-col items-center justify-center z-[100]">
+        <div class="loader"></div>
+        <h1 class="text-2xl mt-4">ROV AUDIT LEAGUE</h1>
+    </div>
 
-    <div id="app-container" class="w-full max-w-7xl mx-auto">
+    <div id="app-container" class="w-full max-w-7xl mx-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <!-- Loading View -->
         <div id="loading-view" class="flex flex-col items-center justify-center h-64">
             <div class="loader"></div>
@@ -122,8 +156,13 @@
                              <p>ยังไม่มีทัวร์นาเมนต์ที่กำลังแข่งขัน</p>
                              <p class="text-sm mt-2">(ผู้ดูแลสามารถสร้างได้จากเมนู)</p>
                          </div>
-                         <div class="overflow-x-auto">
-                            <table id="standings-table" class="standings-table hidden w-full">
+                         <!-- Card view for mobile -->
+                        <div id="standings-cards" class="space-y-2 md:hidden">
+                            <!-- Mobile cards will be injected here -->
+                        </div>
+                        <!-- Table view for desktop -->
+                        <div class="overflow-x-auto hidden md:block">
+                            <table id="standings-table" class="standings-table w-full">
                                 <thead>
                                     <tr>
                                         <th>#</th>
@@ -451,7 +490,7 @@
         </div>
     </div>
 
-    <footer class="fixed bottom-4 right-4 text-xs text-primary-color/40">
+    <footer class="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] text-xs text-primary-color/40">
         Developed by JJ
     </footer>
 
@@ -506,6 +545,15 @@
 
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => {
+             if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js').then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+                });
+            }
             onAuthStateChanged(auth, user => {
                 if (user) {
                     currentUser = user;
@@ -524,42 +572,58 @@
 
         // --- Data Listeners ---
         function initializeDataListeners() {
-            showView('loading');
+            // Splash screen is handled here
+            const splashScreen = document.getElementById('splash-screen');
             
             Object.values(listeners).forEach(unsubscribe => unsubscribe && unsubscribe());
 
             const onDataError = (collectionName, error) => {
                 console.error(`Error fetching ${collectionName}:`, error);
                 showAlert('เกิดข้อผิดพลาด', `ไม่สามารถโหลดข้อมูล ${collectionName} ได้: ${error.message}`);
+                splashScreen.style.display = 'none'; // Hide splash on error too
+            };
+            
+            let dataLoads = { teams: false, players: false, history: false, tournament: false };
+            const checkAllDataLoaded = () => {
+                if (Object.values(dataLoads).every(Boolean)) {
+                    splashScreen.style.display = 'none';
+                    showView('landing');
+                }
             };
 
             listeners.teams = onSnapshot(collection(db, "teams"), snapshot => {
                 teamsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataLoads.teams = true;
+                checkAllDataLoaded();
                 updateUI();
             }, (error) => onDataError('teams', error));
 
             listeners.players = onSnapshot(collection(db, "players"), snapshot => {
                 playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataLoads.players = true;
+                checkAllDataLoaded();
                 updateUI();
             }, (error) => onDataError('players', error));
             
             listeners.history = onSnapshot(collection(db, "history"), snapshot => {
                 historyData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataLoads.history = true;
+                checkAllDataLoaded();
                  updateUI();
             }, (error) => onDataError('history', error));
 
             const tournamentRef = doc(db, "tournaments", "active");
             listeners.tournament = onSnapshot(tournamentRef, doc => {
                 activeTournament = doc.exists() ? { id: doc.id, ...doc.data() } : null;
+                dataLoads.tournament = true;
+                checkAllDataLoaded();
                 updateUI();
             }, (error) => onDataError('active tournament', error));
         }
 
         function updateUI() {
-            if (!teamsData || !playersData) {
-                showView('loading');
-                return;
-            }
+            if (document.getElementById('splash-screen').style.display !== 'none') return; // Don't update UI if splash is visible
+
             renderTournamentPodium();
             renderDailySchedule();
             renderScoreboardDashboard();
@@ -571,7 +635,10 @@
                 showView('main-admin');
             } else {
                  if (mainView.classList.contains('hidden')) {
-                     showView('landing');
+                     // Stay on landing if already there, otherwise show it
+                     if (document.getElementById('landing-view').classList.contains('hidden')) {
+                        showView('landing');
+                     }
                  } else {
                      showView('main-guest');
                  }
@@ -963,7 +1030,7 @@
                 const trophies = calculateTrophies(team.name);
                 
                  const logoDisplay = team.logoUrl 
-                    ? `<img src="${team.logoUrl}" alt="${team.name} Logo" class="w-24 h-24 object-contain mb-2" onerror="this.onerror=null;this.src='https://placehold.co/96x96/0d0d1a/00ffff?text=${team.name.charAt(0)}';">`
+                    ? `<img src="${team.logoUrl}" alt="${team.name} Logo" class="w-24 h-24 object-contain mb-2" onerror="this.onerror=null;this.src='https://placehold.co/96x96/0d0d1a/0d0d1a?text=${team.name.charAt(0)}';">`
                     : `<div class="w-24 h-24 flex items-center justify-center mb-2">
                          <svg class="w-16 h-16 text-primary-color/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </div>`;
@@ -1001,15 +1068,18 @@
             const placeholder = document.getElementById('standings-placeholder');
             const table = document.getElementById('standings-table');
             const tbody = document.getElementById('standings-table-body');
-            
+            const cardsContainer = document.getElementById('standings-cards');
+
             if (!activeTournament) {
                 placeholder.classList.remove('hidden');
-                table.classList.add('hidden');
+                table.parentElement.classList.add('hidden');
+                cardsContainer.classList.add('hidden');
                 return;
             }
 
             placeholder.classList.add('hidden');
-            table.classList.remove('hidden');
+            table.parentElement.classList.remove('hidden');
+            cardsContainer.classList.remove('hidden');
 
             const sortedStandings = [...activeTournament.standings].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
 
@@ -1023,6 +1093,23 @@
                         <td>${standing.wins}</td>
                         <td>${standing.losses}</td>
                     </tr>
+                `;
+            }).join('');
+            
+            cardsContainer.innerHTML = sortedStandings.map((standing, index) => {
+                const team = getTeamById(standing.teamId);
+                if (!team) return '';
+                return `
+                    <div class="flex items-center justify-between p-3 bg-black/20 rounded-md">
+                        <div class="flex items-center">
+                            <span class="text-lg font-bold w-8">${index + 1}</span>
+                            <span class="text-lg font-semibold">${team.name}</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold">${standing.wins} <span class="text-xs font-normal">W</span> - ${standing.losses} <span class="text-xs font-normal">L</span></p>
+                            <p class="text-xs text-gray-400">Played: ${standing.matchesPlayed}</p>
+                        </div>
+                    </div>
                 `;
             }).join('');
         }
@@ -1194,7 +1281,12 @@
             document.getElementById('admin-controls').classList.add('hidden');
             document.getElementById('guest-controls').classList.add('hidden');
 
-            if (viewName === 'loading') document.getElementById('loading-view').classList.remove('hidden');
+            if (viewName === 'loading') {
+                // Don't show loading view if splash is visible
+                if (document.getElementById('splash-screen').style.display === 'none') {
+                    document.getElementById('loading-view').classList.remove('hidden');
+                }
+            }
             else if (viewName === 'landing') document.getElementById('landing-view').classList.remove('hidden');
             else if (viewName === 'main-admin') { document.getElementById('main-view').classList.remove('hidden'); document.getElementById('admin-controls').classList.remove('hidden'); } 
             else if (viewName === 'main-guest') { document.getElementById('main-view').classList.remove('hidden'); document.getElementById('guest-controls').classList.remove('hidden'); }
